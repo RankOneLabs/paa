@@ -257,6 +257,26 @@ def _require_declared_transition(
     )
 
 
+def _fold_current_position(
+    store: EventStore, declaration: PaaTaskDeclaration, scope: str | None,
+) -> tuple[AutonomyPosition, AutonomyEvent | None]:
+    """The current position for one exact (task, version, scope) triple,
+    folded from the latest position_changed event or, if authority has
+    never moved, the declaration's initial_position.
+
+    One read query and no file I/O, which is what makes it callable with
+    a write lock already held — see ``propose``, where the fold has to
+    happen inside the transaction that records its result.
+    """
+    latest = store.get_latest_position_changed_event(
+        task=declaration.task, declaration_version=declaration.version, scope=scope,
+    )
+    current: AutonomyPosition = (
+        latest.to_position if latest is not None else declaration.initial_position
+    )
+    return current, latest
+
+
 def resolve_current_position(
     store: EventStore,
     config: RuntimeConfig,
@@ -271,12 +291,7 @@ def resolve_current_position(
         task, directory=config.declarations_dir, registry=config.registry,
     )
     _validate_scope(declaration, scope)
-    latest = store.get_latest_position_changed_event(
-        task=declaration.task, declaration_version=declaration.version, scope=scope,
-    )
-    current: AutonomyPosition = (
-        latest.to_position if latest is not None else declaration.initial_position
-    )
+    current, latest = _fold_current_position(store, declaration, scope)
     return ResolvedPosition(
         task=declaration.task,
         declaration_version=declaration.version,
@@ -357,9 +372,13 @@ def propose(
             f"to_position {to_position!r} is not a valid autonomy position "
             f"(must be one of {sorted(AUTONOMY_POSITIONS)})"
         )
-    resolved = resolve_current_position(store, config, task, scope)
-    from_position = resolved.current_position
-    _require_declared_transition(declaration, from_position, to_position)
+    # Advisory pre-check. Not authoritative — the position can move
+    # between here and the insert, which is exactly why the same check
+    # runs again under the write lock below. Its only job is to fail an
+    # obviously undeclared transition before evidence is written, so the
+    # common operator error doesn't leave an orphan artifact in the store.
+    provisional_from, _ = _fold_current_position(store, declaration, scope)
+    _require_declared_transition(declaration, provisional_from, to_position)
 
     data = read_evidence_bytes(evidence_path)
     if not data:
@@ -367,10 +386,26 @@ def propose(
     evidence_ref, evidence_sha256 = store_evidence(data, root=config.evidence_root)
 
     resolved_actor = resolve_actor(actor, env_var=config.actor_env_var)
-    resolved_reason = reason or f"requested transition {from_position} to {to_position}"
     motion_id = new_motion_id()
 
-    with store.transaction():
+    # The position is resolved inside the transaction that records the
+    # proposal, under an immediate write lock, so no position_changed can
+    # commit between the read and the insert.
+    #
+    # Reading it outside would leave a window as wide as the evidence I/O
+    # above — tens of milliseconds — and a demotion landing in that window
+    # would be recorded as never having happened: from_position would hold
+    # the pre-demotion value as fact. approve() could not catch it either.
+    # Its intervening-change check anchors the baseline to the proposal's
+    # own (created_at, id), so a position_changed committed *before* the
+    # insert is absorbed into that baseline rather than detected as
+    # intervening — baseline and latest agree, and the stale proposal
+    # passes. The guard defends proposal-to-approval; this closes
+    # read-to-insert.
+    with store.begin_immediate():
+        from_position, _ = _fold_current_position(store, declaration, scope)
+        _require_declared_transition(declaration, from_position, to_position)
+        resolved_reason = reason or f"requested transition {from_position} to {to_position}"
         store.insert_autonomy_event(
             event_id=new_event_id(),
             motion_id=motion_id,

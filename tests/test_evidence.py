@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 
 import pytest
@@ -149,3 +150,51 @@ class TestVerifyEvidence:
         # the call boundary rather than writing into some fallback location.
         with pytest.raises(TypeError):
             store_evidence(b"x")  # type: ignore[call-arg]
+
+
+class TestConcurrentPublish:
+    """The collision check must survive losing the race to another writer.
+
+    The fast-path ``dest.exists()`` read cannot be the guard: a writer can
+    create the destination between that read and the publish. Publishing
+    with ``os.replace`` would silently overwrite whatever arrived in the
+    meantime — including the mismatched bytes this module promises to
+    fail on. ``os.link`` fails instead, routing the race back through the
+    same content check.
+    """
+
+    @staticmethod
+    def _racing_link(written: bytes) -> object:
+        """An os.link that loses the race: another writer creates the
+        destination first, then this link fails as it would in reality."""
+
+        def _link(src: str, dst: str) -> None:
+            Path(dst).write_bytes(written)
+            raise FileExistsError(17, "File exists", src, None, dst)
+
+        return _link
+
+    def test_losing_the_race_to_different_bytes_fails_closed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(os, "link", self._racing_link(b"tampered"))
+        with pytest.raises(EvidenceError, match="content-address collision"):
+            store_evidence(b"data", root=tmp_path)
+
+    def test_losing_the_race_to_identical_bytes_succeeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Two writers storing the same artifact is the common case and is
+        not an error — content addressing makes the loser's work
+        redundant, not wrong."""
+        monkeypatch.setattr(os, "link", self._racing_link(b"data"))
+        ref, sha256 = store_evidence(b"data", root=tmp_path)
+        assert ref == evidence_ref_for(sha256)
+        assert verify_evidence(ref, sha256, root=tmp_path) == b"data"
+
+    def test_lost_race_leaves_no_temp_file_behind(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(os, "link", self._racing_link(b"data"))
+        store_evidence(b"data", root=tmp_path)
+        assert list(tmp_path.rglob(".evidence-*.tmp")) == []

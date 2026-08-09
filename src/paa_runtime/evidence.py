@@ -100,14 +100,11 @@ def store_evidence(data: bytes, *, root: Path) -> tuple[str, str]:
     dest_dir = dest.parent
     dest_dir.mkdir(parents=True, exist_ok=True)
 
+    # Fast path: already stored. This is an optimization, not the guard —
+    # another writer can create dest between this check and the publish
+    # below, so the authoritative collision check is on the link failure.
     if dest.exists():
-        existing = read_evidence_bytes(dest)
-        if existing != data:
-            raise EvidenceError(
-                f"content-address collision at {dest}: existing bytes do not "
-                f"match sha256 {sha256}"
-            )
-        return evidence_ref_for(sha256), sha256
+        return _accept_existing(dest, data, sha256)
 
     tmp_fd, tmp_name = None, None
     try:
@@ -115,14 +112,40 @@ def store_evidence(data: bytes, *, root: Path) -> tuple[str, str]:
         with os.fdopen(tmp_fd, "wb") as handle:
             tmp_fd = None
             handle.write(data)
-        os.replace(tmp_name, dest)
-        tmp_name = None
+        try:
+            # Atomic *no-clobber* publish. os.replace would overwrite a
+            # destination created since the exists() check above, silently
+            # discarding whatever was there — including the mismatched
+            # bytes this function promises to fail on. os.link fails with
+            # FileExistsError instead, which turns the race into the same
+            # collision check the fast path performs.
+            os.link(tmp_name, dest)
+        except FileExistsError:
+            return _accept_existing(dest, data, sha256)
     finally:
         if tmp_fd is not None:
             os.close(tmp_fd)
         if tmp_name is not None and os.path.exists(tmp_name):
             os.unlink(tmp_name)
 
+    return evidence_ref_for(sha256), sha256
+
+
+def _accept_existing(dest: Path, data: bytes, sha256: str) -> tuple[str, str]:
+    """Accept an artifact already at *dest*, or fail closed if its bytes
+    differ from *data*.
+
+    Reached from both the fast path and the lost-race path, which is the
+    point: whether this writer saw the file first or was beaten to it,
+    the same content check decides, so concurrency cannot turn a
+    collision into a silent overwrite.
+    """
+    existing = read_evidence_bytes(dest)
+    if existing != data:
+        raise EvidenceError(
+            f"content-address collision at {dest}: existing bytes do not "
+            f"match sha256 {sha256}"
+        )
     return evidence_ref_for(sha256), sha256
 
 

@@ -76,7 +76,7 @@ try:
     )
     approve(store, config, motion_id=motion.motion_id, reason="reviewed and approved")
 
-    show(store, config, task="refund_approval", scope=None)
+    print(show(store, config, task="refund_approval", scope=None))
     # {'task': 'refund_approval', 'current_position': 'hotl', ...}
 finally:
     store.close()

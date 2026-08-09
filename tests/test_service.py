@@ -1048,3 +1048,92 @@ class TestListMotionsCorruptHistory:
 
         with pytest.raises(svc.PaaCorruptHistoryError, match="m-orphan"):
             svc.list_motions(store)
+
+
+class TestProposeResolvesUnderTheWriteLock:
+    """B7: the position is folded inside the transaction that records it.
+
+    Reading it beforehand leaves a window as wide as the evidence I/O, and
+    a position_changed committed in that window is not merely missed — it
+    is unrecoverable later. approve()'s intervening-change check anchors
+    its baseline to the proposal's own (created_at, id), so a change that
+    landed *before* the insert is absorbed into the baseline rather than
+    detected as intervening: baseline and latest agree and the stale
+    proposal passes.
+    """
+
+    def test_position_change_during_evidence_io_is_not_missed(
+        self,
+        store: SqliteEventStore,
+        config: RuntimeConfig,
+        evidence_file: Path,
+        evidence_file_b: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        first = svc.propose(
+            store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+            evidence_path=evidence_file, actor="steve",
+        )
+
+        real_store_evidence = svc.store_evidence
+        calls: list[str] = []
+
+        def _approve_mid_flight(data: bytes, *, root: Path) -> tuple[str, str]:
+            """Stand in for the window: commit a position change while the
+            second proposal is doing its evidence I/O."""
+            calls.append("raced")
+            svc.approve(store, config, motion_id=first.motion_id, reason="emergency")
+            return real_store_evidence(data, root=root)
+
+        monkeypatch.setattr(svc, "store_evidence", _approve_mid_flight)
+
+        # The position is hitl when the second proposal starts and hotl by
+        # the time it inserts. hotl -> hotl is not a declared transition,
+        # so resolving under the lock rejects it. Resolving beforehand
+        # would have recorded from_position=hitl as fact.
+        with pytest.raises(svc.PaaTransitionError):
+            svc.propose(
+                store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+                evidence_path=evidence_file_b, actor="steve",
+            )
+
+        assert calls == ["raced"], "the race must actually have been exercised"
+
+    def test_no_motion_is_recorded_when_the_lock_rejects(
+        self,
+        store: SqliteEventStore,
+        config: RuntimeConfig,
+        evidence_file: Path,
+        evidence_file_b: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        first = svc.propose(
+            store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+            evidence_path=evidence_file, actor="steve",
+        )
+        real_store_evidence = svc.store_evidence
+
+        def _approve_mid_flight(data: bytes, *, root: Path) -> tuple[str, str]:
+            svc.approve(store, config, motion_id=first.motion_id, reason="emergency")
+            return real_store_evidence(data, root=root)
+
+        monkeypatch.setattr(svc, "store_evidence", _approve_mid_flight)
+        with pytest.raises(svc.PaaTransitionError):
+            svc.propose(
+                store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+                evidence_path=evidence_file_b, actor="steve",
+            )
+
+        # Only the first motion exists: the rejected proposal wrote nothing.
+        assert [m.motion_id for m in svc.list_motions(store)] == [first.motion_id]
+
+    def test_uncontended_proposal_still_records_the_current_position(
+        self, store: SqliteEventStore, config: RuntimeConfig, evidence_file: Path,
+    ) -> None:
+        """The lock changes when the fold happens, not what it produces."""
+        motion = svc.propose(
+            store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+            evidence_path=evidence_file, actor="steve",
+        )
+        assert motion.from_position == "hitl"
+        assert motion.to_position == "hotl"
