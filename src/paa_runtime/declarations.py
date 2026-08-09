@@ -39,6 +39,12 @@ WindowKind = Literal["cases", "duration"]
 PromotionExecution = Literal["operator_approval", "automatic"]
 PositionPolicyMode = Literal["offline", "blocking", "async"]
 
+# Every membership test against these sets is guarded by an isinstance(str)
+# check first. YAML admits mappings and sequences anywhere a scalar is
+# expected, and those are unhashable — `{"a": 1} in frozenset(...)` raises
+# TypeError, not False. Without the guard a malformed declaration escapes
+# this module as TypeError instead of PaaDeclarationError, which is the one
+# thing the loader promises never to do.
 _POSITIONS: frozenset[str] = frozenset({"manual", "hitl", "hotl", "autonomous"})
 _DEPLOYMENTS: frozenset[str] = frozenset({"active", "shadow", "disabled"})
 _WINDOW_KINDS: frozenset[str] = frozenset({"cases", "duration"})
@@ -215,7 +221,7 @@ def _require_keys(raw: dict[str, object], required: frozenset[str], what: str, p
 
 def _require_position(raw: dict[str, object], key: str, what: str, path: Path) -> AutonomyPosition:
     value = raw[key]
-    if value not in _POSITIONS:
+    if not isinstance(value, str) or value not in _POSITIONS:
         raise PaaDeclarationError(
             f"{path}: {what} {key!r} is unsupported: {value!r} "
             f"(must be one of {sorted(_POSITIONS)})"
@@ -228,7 +234,7 @@ def _build_window(raw: object, path: Path) -> PaaWindow:
     _require_keys(window, frozenset({"kind", "size"}), "window", path)
     kind = window["kind"]
     size = window["size"]
-    if kind not in _WINDOW_KINDS:
+    if not isinstance(kind, str) or kind not in _WINDOW_KINDS:
         raise PaaDeclarationError(
             f"{path}: unsupported window kind {kind!r} (must be one of {sorted(_WINDOW_KINDS)})"
         )
@@ -244,7 +250,7 @@ def _build_promotion(raw: object, path: Path) -> PaaPromotion:
     promotion = _require_mapping(raw, "promotion", path)
     _require_keys(promotion, _REQUIRED_PROMOTION_KEYS, "promotion", path)
     execution = promotion["execution"]
-    if execution not in _PROMOTION_EXECUTIONS:
+    if not isinstance(execution, str) or execution not in _PROMOTION_EXECUTIONS:
         raise PaaDeclarationError(
             f"{path}: unsupported promotion execution {execution!r} "
             f"(must be one of {sorted(_PROMOTION_EXECUTIONS)})"
@@ -282,7 +288,7 @@ def _build_position_policy(raw: object, path: Path) -> PaaPositionPolicy:
     resolved: dict[str, str] = {}
     for position in sorted(_REQUIRED_POSITION_POLICY_KEYS):
         mode = policy_raw[position]
-        if mode not in _POSITION_POLICY_MODES:
+        if not isinstance(mode, str) or mode not in _POSITION_POLICY_MODES:
             raise PaaDeclarationError(
                 f"{path}: position_policy {position!r} is unsupported: {mode!r} "
                 f"(must be one of {sorted(_POSITION_POLICY_MODES)})"
@@ -375,7 +381,7 @@ def _build_declaration(
         raise PaaDeclarationError(f"{path}: 'version' must be a positive integer")
 
     deployment = task_raw["deployment"]
-    if deployment not in _DEPLOYMENTS:
+    if not isinstance(deployment, str) or deployment not in _DEPLOYMENTS:
         raise PaaDeclarationError(
             f"{path}: unsupported deployment {deployment!r} "
             f"(must be one of {sorted(_DEPLOYMENTS)})"
@@ -422,7 +428,7 @@ def load_paa_declarations(
     declarations: dict[str, PaaTaskDeclaration] = {}
     for path in paths:
         try:
-            raw = yaml.safe_load(path.read_text())
+            raw = yaml.safe_load(path.read_text(encoding="utf-8"))
         except yaml.YAMLError as exc:
             raise PaaDeclarationError(f"{path}: invalid YAML: {exc}") from exc
 

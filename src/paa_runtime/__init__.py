@@ -27,8 +27,8 @@ What this package governs: task declarations, the motion lifecycle
 binding, and the append-only event store. What it does not: producing
 evaluator verdicts, or evaluating promotion rules — thresholds are
 declared, not machine-evaluated, and approval is an operator judgment.
-See PAA.md for the full mapping against the paa.dev contracts, including
-what this implementation does not match.
+The README's "What it does not do" section states the non-matches
+against the paa.dev contracts in full.
 """
 
 from __future__ import annotations

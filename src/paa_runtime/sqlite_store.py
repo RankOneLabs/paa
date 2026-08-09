@@ -191,8 +191,20 @@ class SqliteEventStore:
         ``begin_immediate()`` context — this issues a single INSERT and
         relies on the caller's transaction boundary for atomicity with
         any sibling event write (e.g. approve's motion_approved +
-        position_changed pair).
+        position_changed pair). That requirement is checked rather than
+        documented: without the check, an insert issued outside a context
+        still succeeds, on sqlite3's implicit transaction, and the pair it
+        was supposed to be half of is no longer atomic. The failure is
+        silent and shows up later as a motion_approved with no
+        position_changed — exactly the corrupt history the append-only
+        triggers exist to prevent, arrived at from the other direction.
         """
+        if not self._conn.in_transaction:
+            raise RuntimeError(
+                "insert_autonomy_event requires an open transaction: call it "
+                "inside transaction() or begin_immediate() so sibling event "
+                "writes commit atomically"
+            )
         self._conn.execute(
             """
             INSERT INTO autonomy_events (

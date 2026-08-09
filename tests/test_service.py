@@ -958,3 +958,93 @@ class TestListMotions:
     ) -> None:
         with pytest.raises(svc.PaaValidationError):
             svc.list_motions(store, status="not_a_status")
+
+
+class TestResolveActorFallbackFailure:
+    """The OS-login fallback is an I/O boundary and converts to a domain error.
+
+    getpass.getuser() consults the environment and then the password
+    database. A container or daemon with no passwd entry has neither:
+    Python 3.13+ raises OSError there, 3.12 raises KeyError. Both must
+    surface as the error that tells the operator what to do, not as a
+    traceback from a stdlib module they never called.
+    """
+
+    @pytest.mark.parametrize(
+        "raised",
+        [OSError("no login name"), KeyError("getpwuid()")],
+        ids=["oserror", "keyerror"],
+    )
+    def test_login_lookup_failure_becomes_validation_error(
+        self, monkeypatch: pytest.MonkeyPatch, raised: Exception,
+    ) -> None:
+        monkeypatch.delenv("CUSTOM_PAA_ACTOR", raising=False)
+
+        def _fail() -> str:
+            raise raised
+
+        monkeypatch.setattr(svc.getpass, "getuser", _fail)
+        with pytest.raises(svc.PaaValidationError, match="CUSTOM_PAA_ACTOR"):
+            svc.resolve_actor(None, env_var="CUSTOM_PAA_ACTOR")
+
+    def test_explicit_actor_never_reaches_the_fallback(
+        self, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        def _fail() -> str:
+            raise OSError("must not be called")
+
+        monkeypatch.setattr(svc.getpass, "getuser", _fail)
+        assert svc.resolve_actor("steve", env_var="CUSTOM_PAA_ACTOR") == "steve"
+
+
+class TestListMotionsCorruptHistory:
+    def test_error_names_every_corrupt_motion(
+        self, store: SqliteEventStore, config: RuntimeConfig,
+    ) -> None:
+        """`list` is the command an operator reaches for when history is
+        suspect, so its failure has to name what to inspect — all of it,
+        not just whichever group happened to be projected first."""
+        common = dict(
+            task=OUTBOUND, declaration_version=1, scope=BLUESKY, event="motion_approved",
+            from_position="hitl", to_position="hotl",
+            evidence_ref="evidence/paa/" + "a" * 64 + "/evidence.json",
+            evidence_sha256="a" * 64, actor="steve", reason="r",
+        )
+        with store.transaction():
+            store.insert_autonomy_event(
+                event_id="e1", motion_id="m-zeta", created_at="2026-01-01T00:00:00.000000Z",
+                **common,  # type: ignore[arg-type]
+            )
+            store.insert_autonomy_event(
+                event_id="e2", motion_id="m-alpha", created_at="2026-01-02T00:00:00.000000Z",
+                **common,  # type: ignore[arg-type]
+            )
+
+        with pytest.raises(svc.PaaCorruptHistoryError) as excinfo:
+            svc.list_motions(store)
+        message = str(excinfo.value)
+        assert "m-alpha" in message
+        assert "m-zeta" in message
+        assert message.index("m-alpha") < message.index("m-zeta"), "ids are sorted"
+
+    def test_a_corrupt_motion_still_fails_the_listing(
+        self, store: SqliteEventStore, config: RuntimeConfig, evidence_file: Path,
+    ) -> None:
+        """Fail-closed is preserved: a listing that silently omitted the
+        motions it could not project would be a worse answer than none."""
+        svc.propose(
+            store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
+            evidence_path=evidence_file, actor="steve",
+        )
+        with store.transaction():
+            store.insert_autonomy_event(
+                event_id="orphan", motion_id="m-orphan", task=OUTBOUND,
+                declaration_version=1, scope=BLUESKY, event="motion_approved",
+                from_position="hitl", to_position="hotl",
+                evidence_ref="evidence/paa/" + "a" * 64 + "/evidence.json",
+                evidence_sha256="a" * 64, actor="steve", reason="r",
+                created_at="2026-01-01T00:00:00.000000Z",
+            )
+
+        with pytest.raises(svc.PaaCorruptHistoryError, match="m-orphan"):
+            svc.list_motions(store)

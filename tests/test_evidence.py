@@ -1,4 +1,4 @@
-"""Tests for paa_evidence's content-addressed evidence storage."""
+"""Tests for paa_runtime.evidence's content-addressed evidence storage."""
 
 from __future__ import annotations
 
@@ -116,7 +116,7 @@ class TestVerifyEvidence:
     def test_hash_mismatch_between_ref_and_recorded_hash_rejected(
         self, tmp_path: Path
     ) -> None:
-        ref, sha256 = store_evidence(b"data", root=tmp_path)
+        ref, _sha256 = store_evidence(b"data", root=tmp_path)
         other_sha = "c" * 64
         with pytest.raises(EvidenceError, match="does not match"):
             verify_evidence(ref, other_sha, root=tmp_path)

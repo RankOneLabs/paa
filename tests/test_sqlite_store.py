@@ -414,3 +414,30 @@ class TestGetAutonomyEventsFiltering:
 
         events = store.get_autonomy_events()
         assert {e.id for e in events} == {"e1", "e2"}
+
+
+class TestTransactionRequired:
+    """Semantic 1 of the EventStore protocol is enforced, not documented."""
+
+    def test_insert_outside_a_transaction_is_refused(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        with pytest.raises(RuntimeError, match="requires an open transaction"):
+            store.insert_autonomy_event(**_event_kwargs())
+
+    def test_refused_insert_writes_nothing(self, tmp_path: Path) -> None:
+        """The point of the check is that the orphan write never lands.
+
+        Without it sqlite3 opens an implicit transaction and commits the
+        row on its own schedule, so an event meant to be half of an
+        atomic pair is durable on its own.
+        """
+        store = _make_store(tmp_path)
+        with pytest.raises(RuntimeError):
+            store.insert_autonomy_event(**_event_kwargs())
+        assert store.get_autonomy_events() == []
+
+    def test_insert_inside_begin_immediate_is_allowed(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        with store.begin_immediate():
+            store.insert_autonomy_event(**_event_kwargs())
+        assert len(store.get_autonomy_events()) == 1

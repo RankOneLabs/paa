@@ -18,8 +18,6 @@ PAA is implementation-neutral by construction — it describes *what* a governed
 - **Evaluate promotion rules.** Thresholds and windows are *declared*, not machine-evaluated. Approval is an operator judgment.
 - **Carry worker identity.** The contract has no worker-identity field yet, so evidence windows cannot prove which worker produced them. Tracked for a later contract cycle.
 
-`PAA.md` maps every surface here to its paa.dev primitive and states the non-matches in full.
-
 ## Install
 
 ```bash
@@ -32,7 +30,31 @@ Adoption is two things: build one `RuntimeConfig`, then call the lifecycle API. 
 
 ```python
 from pathlib import Path
-from paa_runtime import RuntimeConfig, SqliteEventStore, propose, approve, show
+
+from paa_runtime import (
+    ProducerRegistration,
+    RuntimeConfig,
+    SqliteEventStore,
+    approve,
+    propose,
+    show,
+)
+
+# One entry per evaluator identity your declarations reference. This is the
+# consumer domain data the runtime does not own: it says which code produces
+# each verdict, and the loader rejects any declaration naming an identity
+# that is not registered here.
+MY_PRODUCER_REGISTRY = (
+    ProducerRegistration(
+        property="refund_correctness",
+        target="refund_decision",
+        technique="rubric_grader",
+        oracle="human_labeled",
+        version="1.0.0",
+        authority="team_finance",
+        status="implemented",
+    ),
+)
 
 config = RuntimeConfig(
     declarations_dir=Path("contracts/paa"),
@@ -41,20 +63,23 @@ config = RuntimeConfig(
     db_path=Path("paa_runtime.db"),
     actor_env_var="MY_APP_PAA_ACTOR",
 )
+
 store = SqliteEventStore(config.db_path)
+try:
+    motion = propose(
+        store, config,
+        task="refund_approval",
+        scope=None,
+        to_position="hotl",
+        evidence_path=Path("promotion-report.json"),
+        reason="window closed eligible",
+    )
+    approve(store, config, motion_id=motion.motion_id, reason="reviewed and approved")
 
-motion = propose(
-    store, config,
-    task="refund_approval",
-    scope=None,
-    to_position="hotl",
-    evidence_path=Path("promotion-report.json"),
-    reason="window closed eligible",
-)
-approve(store, config, motion_id=motion.motion_id, reason="reviewed and approved")
-
-show(store, config, task="refund_approval", scope=None)
-# {'task': 'refund_approval', 'current_position': 'hotl', ...}
+    show(store, config, task="refund_approval", scope=None)
+    # {'task': 'refund_approval', 'current_position': 'hotl', ...}
+finally:
+    store.close()
 ```
 
 `scope` is `None` for a task whose declaration has no `scopes` block, and must be one of the declared scopes otherwise.
@@ -63,7 +88,7 @@ show(store, config, task="refund_approval", scope=None)
 
 `SqliteEventStore` is the default and most consumers should use it. `EventStore` is a protocol so that a consumer whose governed effect and the position read authorizing it must commit in a *single lock domain* can implement it over its own connection — a runtime-owned database cannot offer that guarantee across process boundaries. It is one insert, four reads, and two transaction context managers.
 
-The trade-off is documented rather than hidden: see the claim-atomicity entry in `PAA.md`.
+The trade-off is named rather than hidden. With the default store, a consumer that resolves a position and then performs the effect it authorizes does so across two lock domains: a demotion committed in between is not seen by the effect already in flight. That window is small and the failure is a stale *permit*, not a corrupt history — but it is real, and a consumer for which it is unacceptable implements `EventStore` over the same connection its effect commits on.
 
 ## Development
 
@@ -76,4 +101,4 @@ uv run mypy src/paa_runtime
 
 ## Status
 
-`0.2.0`, tracking the `paa-task/0.2.1-draft` schema family. Package and spec versions may drift; `PAA.md` records which spec version each release targets.
+`0.2.0`, tracking the `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft` schema families. Package and spec versions drift independently — the schema families a release targets are stated here and asserted by the conformance suite, not inferred from the package version.

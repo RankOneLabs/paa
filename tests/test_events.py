@@ -1,4 +1,4 @@
-"""Tests for paa_events's typed vocabulary and id/timestamp generators."""
+"""Tests for paa_runtime.events's typed vocabulary and id/timestamp generators."""
 
 from __future__ import annotations
 

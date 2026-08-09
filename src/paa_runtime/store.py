@@ -10,9 +10,10 @@ SqliteEventStore`` is the default, the runtime owns its own database, and
 no consumer has to host a table to adopt the package. The protocol stays
 deliberately small for the consumer that does need to override it — one
 whose governed effect and the position read authorizing it must commit in
-a single lock domain, which a runtime-owned store cannot offer. See
-PAA.md for that claim-atomicity trade-off; it is a named limitation and an
-intentional escape hatch, not an oversight.
+a single lock domain, which a runtime-owned store cannot offer. That
+claim-atomicity trade-off is written up under "Overriding the store" in
+the README; it is a named limitation and an intentional escape hatch,
+not an oversight.
 
 This module holds no SQL and no schema — see
 ``paa_runtime.sqlite_store`` for the default implementation's DDL,
@@ -99,12 +100,17 @@ class EventStore(Protocol):
     Five semantics are load-bearing for every implementation, not just
     the default one:
 
-    1. **Transaction boundary.** ``insert_autonomy_event`` assumes the
-       caller already holds a transaction — it issues a single insert and
-       relies on the caller's ``transaction()`` / ``begin_immediate()``
+    1. **Transaction boundary.** ``insert_autonomy_event`` requires the
+       caller to already hold a transaction — it issues a single insert
+       and relies on the caller's ``transaction()`` / ``begin_immediate()``
        boundary for atomicity with any sibling event write. Approve, for
        example, writes a ``motion_approved`` + ``position_changed`` pair
        atomically under one boundary; the store never opens its own.
+       Implementations SHOULD reject an insert issued outside a
+       transaction rather than quietly accepting it: a backend that
+       auto-commits the orphan write splits that pair silently, and the
+       resulting history — an approval with no position change — is
+       indistinguishable from corruption after the fact.
     2. **Ordering.** Reads are ordered ``(created_at, id)`` ascending;
        latest-position lookups are ordered ``(created_at, id)``
        descending. ``get_position_changed_event_before`` compares

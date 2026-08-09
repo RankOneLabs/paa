@@ -491,3 +491,82 @@ class TestScopes:
         _write_declaration(tmp_path, base)
         with pytest.raises(PaaDeclarationError, match="'scopes' must not contain duplicates"):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+
+class TestMalformedScalarTypes:
+    """Every closed-vocabulary field must reject non-string YAML values as
+    a declaration error.
+
+    YAML admits a mapping or a sequence anywhere a scalar is expected, and
+    both are unhashable — testing one for membership in a frozenset raises
+    TypeError rather than returning False. Before the guard, a declaration
+    like ``initial_position: {a: 1}`` escaped the loader as an unhandled
+    TypeError from a private helper, which breaks the only promise this
+    module makes about malformed input.
+    """
+
+    @pytest.mark.parametrize("bad_value", [{"a": 1}, ["a"]], ids=["mapping", "sequence"])
+    def test_initial_position_non_string(self, tmp_path: Path, bad_value: object) -> None:
+        base = dict(_CASES_TASK)
+        base["initial_position"] = bad_value
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="initial_position"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_deployment_non_string(self, tmp_path: Path) -> None:
+        base = dict(_CASES_TASK)
+        base["deployment"] = {"a": 1}
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="unsupported deployment"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_window_kind_non_string(self, tmp_path: Path) -> None:
+        base = dict(_CASES_TASK)
+        promotion = dict(base["promotion"])  # type: ignore[arg-type]
+        promotion["window"] = {"kind": {"a": 1}, "size": 50}
+        base["promotion"] = promotion
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="unsupported window kind"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_promotion_execution_non_string(self, tmp_path: Path) -> None:
+        base = dict(_CASES_TASK)
+        promotion = dict(base["promotion"])  # type: ignore[arg-type]
+        promotion["execution"] = ["operator_approval"]
+        base["promotion"] = promotion
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="unsupported promotion execution"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_position_policy_mode_non_string(self, tmp_path: Path) -> None:
+        base = dict(_CASES_TASK)
+        policy = dict(_FIXED_POSITION_POLICY)
+        policy["hitl"] = {"a": 1}
+        base["position_policy"] = policy
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="position_policy"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+
+class TestDeclarationEncoding:
+    def test_non_ascii_declaration_content_round_trips(self, tmp_path: Path) -> None:
+        """Declarations are read as UTF-8 explicitly, not in the host's
+        locale encoding.
+
+        This asserts the content survives; it cannot vary the interpreter's
+        preferred encoding to prove locale independence directly. The
+        guarantee is carried by the explicit ``encoding="utf-8"`` at the
+        read — without it a non-UTF-8 host either fails to decode this
+        file or decodes it to different text.
+        """
+        base = dict(_CASES_TASK)
+        promotion = dict(base["promotion"])  # type: ignore[arg-type]
+        promotion["report"] = "promoción_señal_report"
+        base["promotion"] = promotion
+        path = tmp_path / f"{base['task']}.v{base['version']}.yaml"
+        path.write_bytes(
+            yaml.safe_dump(base, allow_unicode=True).encode("utf-8")
+        )
+
+        declarations = load_paa_declarations(tmp_path, registry=_REGISTRY)
+        assert declarations[str(base["task"])].promotion.report == "promoción_señal_report"

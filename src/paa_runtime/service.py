@@ -201,13 +201,29 @@ class Motion:
 
 
 def resolve_actor(explicit: str | None, *, env_var: str) -> str:
-    """--actor, then the configured env var, then the OS login name."""
+    """--actor, then the configured env var, then the OS login name.
+
+    The last fallback is an I/O boundary: ``getpass.getuser()`` consults
+    the environment and then the password database, and in a container or
+    a daemon with no passwd entry it has neither to consult. Python 3.13+
+    raises OSError there, 3.12 raises KeyError. Either way the operator's
+    fix is the same — pass --actor or set the env var — so both convert
+    to the error that says so, rather than escaping as a stack trace from
+    a stdlib module the caller never named.
+    """
     if explicit:
         return explicit
     env_actor = os.environ.get(env_var)
     if env_actor:
         return env_actor
-    return getpass.getuser()
+    try:
+        return getpass.getuser()
+    except (OSError, KeyError) as exc:
+        raise PaaValidationError(
+            "could not determine the acting operator: no explicit actor, "
+            f"no {env_var} in the environment, and the OS login name is "
+            f"unavailable ({exc!r}). Pass an explicit actor or set {env_var}."
+        ) from exc
 
 
 def _validate_scope(declaration: PaaTaskDeclaration, scope: str | None) -> None:
@@ -674,7 +690,24 @@ def list_motions(
     for row in events:
         grouped.setdefault(row.motion_id, []).append(row)
 
-    motions = [_project_motion(rows) for rows in grouped.values()]
+    # Project every group before failing, so the error can name all the
+    # corrupt motions rather than only the first one encountered. `list`
+    # is the command an operator reaches for *when* history is suspect,
+    # so its failure has to be the diagnostic: it still fails closed —
+    # a listing that silently omitted unprojectable motions would be a
+    # worse answer than no listing — but it fails with the ids to inspect.
+    motions: list[Motion] = []
+    corrupt: list[str] = []
+    for motion_id, rows in grouped.items():
+        try:
+            motions.append(_project_motion(rows))
+        except PaaCorruptHistoryError:
+            corrupt.append(motion_id)
+    if corrupt:
+        raise PaaCorruptHistoryError(
+            f"motions have no motion_proposed event: {sorted(corrupt)}"
+        )
+
     if status is not None:
         motions = [m for m in motions if m.status == status]
     motions.sort(key=lambda m: (m.proposed_at, m.motion_id))
