@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor and the current release. requires-python is >=3.12, and
+        # the runtime leans on 3.12+ typing syntax throughout, so the floor is
+        # the version that can actually break. Running only the newest would
+        # let a 3.13-only construct land and quietly raise the real floor.
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        # --locked, not --frozen: a lockfile that has drifted from
+        # pyproject.toml should fail here rather than be silently regenerated
+        # into something nobody reviewed.
+        run: uv sync --locked --python ${{ matrix.python-version }}
+
+      - name: Test
+        run: uv run pytest
+
+      - name: Lint
+        run: uv run ruff check src tests
+
+      - name: Typecheck
+        run: uv run mypy src/paa_runtime
+
+  # The base install has to work for someone who clones only this repo. That
+  # is not hypothetical: an earlier revision of the conformance extra pinned
+  # paa-contracts to a sibling site checkout, and because uv resolves metadata
+  # for every locked entry regardless of which extras are requested, plain
+  # `uv sync` failed for everyone who did not have the site repo next door.
+  # The unit tests above all passed while that was true, because the developer
+  # machine that ran them had the sibling.
+  clean-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install from the lockfile with nothing else present
+        run: uv sync --locked
+
+      - name: Import the package from a built wheel
+        # Built and installed as a wheel, not run from src/, so a packaging
+        # mistake — a module left out of the wheel, a data file assumed
+        # present — fails here instead of at a consumer's first import.
+        run: |
+          uv build --wheel
+          uv run --isolated --no-project --with dist/*.whl python -c "
+          import paa_runtime
+          from paa_runtime import RuntimeConfig, SqliteEventStore, propose, approve, show
+          print('paa_runtime', paa_runtime.__file__)
+          "
+
+  # Conformance runs against the published contract artifacts, which are not
+  # published yet. This job is the placeholder for spec step 2: once
+  # paa-contracts is on PyPI it becomes `uv sync --extra conformance` plus the
+  # suite, and the conformance claim stops depending on who ran it.
+  #
+  # It is deliberately not written as a skipping job. A test that skips by
+  # default is a test that is off, and this repo already decided that once —
+  # see the schema-harness swap in the extraction spec.
