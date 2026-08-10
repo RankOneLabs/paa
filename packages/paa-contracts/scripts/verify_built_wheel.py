@@ -9,7 +9,7 @@ checked by the unit tests, which run against the working tree and would pass
 just as happily if the build shipped an empty package.
 
 So this compares the built wheel against the tree in both directions. Missing
-files catch a fixture directory added to the site but not to the hook's
+files catch a fixture directory added to the corpus but not to the hook's
 _ARTIFACTS. Extra files catch a stale copy surviving in the build. Differing
 bytes catch any transformation applied on the way in, which for
 content-addressed artifacts is indistinguishable from corruption.
@@ -24,7 +24,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-# Relative to the site root; must stay in step with hatch_build.py's _ARTIFACTS.
+# Relative to the repo root; must stay in step with hatch_build.py's _ARTIFACTS.
 ARTIFACT_DIRS = ("schemas", "examples/paa-tasks", "examples/runtime-conformance")
 
 _DATA_MARKER = "/_data/"
@@ -44,7 +44,7 @@ def main(argv: list[str]) -> int:
         print(f"no such wheel: {wheel_path}", file=sys.stderr)
         return 2
 
-    site_root = Path(__file__).resolve().parents[3]
+    repo_root = Path(__file__).resolve().parents[3]
     wheel = zipfile.ZipFile(wheel_path)
 
     in_wheel = {
@@ -53,9 +53,9 @@ def main(argv: list[str]) -> int:
         if _DATA_MARKER in name
     }
     in_tree = {
-        str(path.relative_to(site_root))
+        str(path.relative_to(repo_root))
         for directory in ARTIFACT_DIRS
-        for path in (site_root / directory).rglob("*")
+        for path in (repo_root / directory).rglob("*")
         if path.is_file()
     }
 
@@ -64,7 +64,7 @@ def main(argv: list[str]) -> int:
     if not in_wheel:
         problems.append(
             "the wheel carries no contract artifacts at all — the build hook "
-            "did not recognise this checkout as a site tree"
+            "did not recognise this checkout as a contract tree"
         )
 
     for missing in sorted(in_tree - set(in_wheel)):
@@ -74,7 +74,7 @@ def main(argv: list[str]) -> int:
 
     for relative in sorted(in_tree & set(in_wheel)):
         packed = _digest(wheel.read(in_wheel[relative]))
-        source = _digest((site_root / relative).read_bytes())
+        source = _digest((repo_root / relative).read_bytes())
         if packed != source:
             problems.append(
                 f"bytes differ: {relative} "

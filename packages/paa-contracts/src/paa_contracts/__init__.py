@@ -12,10 +12,10 @@ second implementation in any language gets its fixtures the same way the first
 one does. That is implementation-neutrality made mechanical instead of
 asserted.
 
-Nothing here is a copy. The artifacts are pulled from the paa.dev working tree
-at build time by hatch_build.py, so the files the site serves at
-https://www.paa.dev and the files a conformance suite loads are the same bytes
-from the same commit.
+Nothing here is a copy. The artifacts are pulled from the repo root at build
+time by hatch_build.py, so the files the site serves at https://www.paa.dev
+and the files a conformance suite loads are the same bytes from the same
+commit.
 """
 
 from __future__ import annotations
@@ -44,10 +44,11 @@ SchemaId = Literal[
     "paa-autonomy-event",
 ]
 
-#: The normative contracts, in the same order as the site's
-#: scripts/lib/contract-registry.mjs. Both lists exist because they serve
-#: different languages; test_registry_parity.py asserts they agree, so the
-#: duplication cannot drift silently.
+#: The normative contracts. tests/test_registry.py asserts this list is
+#: exactly the set of schemas/*.schema.json on disk, so a contract added to
+#: the corpus and forgotten here fails rather than going unserved. Consumers
+#: in other languages keep their own list and check it the same way, against
+#: the artifacts rather than against this one.
 SCHEMA_IDS: tuple[SchemaId, ...] = (
     "paa-task",
     "paa-evidence-record",
@@ -146,12 +147,12 @@ def _resolve_data_root() -> tuple[Path, Literal["packaged", "worktree"]]:
 
     Two modes, deliberately, because there are two ways this package is
     legitimately used. An installed wheel carries the artifacts under
-    ``_data/``, placed there by hatch_build.py. An editable install from the
-    site repo does not — hatchling's editable path hook exposes the source
-    tree, and the hook has nothing to copy into. Falling back to the working
-    tree makes ``uv pip install -e packages/paa-contracts`` behave identically
-    to a real install, which keeps the site→runtime dev loop from needing a
-    release for every schema edit.
+    ``_data/``, placed there by hatch_build.py. An editable install — which
+    is what a workspace member is — does not: hatchling's editable path hook
+    exposes the source tree, and the hook has nothing to copy into. Falling
+    back to the working tree makes that behave identically to a real install,
+    which keeps a schema edit from needing a release before the conformance
+    suite can see it.
 
     Both modes resolve to the same bytes from the same commit, so which one is
     active never changes an answer — but it changes what a failure means,
@@ -180,8 +181,8 @@ def _resolve_data_root() -> tuple[Path, Literal["packaged", "worktree"]]:
     )
     raise ContractsUnavailableError(
         f"paa-contracts could not locate a complete set of contract artifacts: "
-        f"{detail}, and no site checkout above it carries all of "
-        f"{list(_REQUIRED_ROOTS)}. A wheel must be built from a full paa.dev "
+        f"{detail}, and no checkout above it carries all of "
+        f"{list(_REQUIRED_ROOTS)}. A wheel must be built from a full repo "
         "checkout so hatch_build.py has schemas/ and examples/ to pull from."
     )
 

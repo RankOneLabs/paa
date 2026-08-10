@@ -29,7 +29,7 @@ from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-# Relative to the site root: the directories that constitute the published
+# Relative to the repo root: the directories that constitute the published
 # contract, and where each lands inside the package.
 _ARTIFACTS: tuple[tuple[str, str], ...] = (
     ("schemas", "schemas"),

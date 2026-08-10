@@ -37,21 +37,22 @@ packages = ["src/paa_contracts"]
 include = ["src", "hatch_build.py", "README.md", "pyproject.toml"]
 
 # The contract artifacts are NOT vendored into this directory. hatch_build.py
-# pulls them from the site's working tree at build time; they land under
+# pulls them from the repo root at build time; they land under
 # paa_contracts/_data/ in both built artifacts.
 #
-# This is the whole point of the packaging arrangement. The site serves
-# schemas/ and examples/ at their published URLs and its eleven-stage
-# validator reads them straight from the tree; the runtime reads the same
-# bytes as installed package data. If this directory held copies instead,
-# there would be two sources of truth one careless commit apart, and every
-# conformance claim would be a claim about the copy. Build-time inclusion
-# makes "one source of truth" a property of the build rather than a rule
-# someone has to remember.
+# This is the whole point of the packaging arrangement. schemas/ and
+# examples/ sit at the root of this repo: the reference implementation's
+# conformance suite reads them from the tree, this package ships them as
+# installed data, and the site serves them at their published URLs from the
+# npm package built out of the same directories. If this directory held
+# copies instead, there would be two sources of truth one careless commit
+# apart, and every conformance claim would be a claim about the copy.
+# Build-time inclusion makes "one source of truth" a property of the build
+# rather than a rule someone has to remember.
 #
 # The consequence to know about: a release can only be cut from a full
-# checkout of the site repo. That is correct — the contract artifacts are
-# the site's, and a release built from anything less would be partial.
+# checkout of this repo. That is correct — a release built from anything
+# less would be a partial contract.
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
 
