@@ -31,7 +31,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://www.paa.dev"
 Documentation = "https://www.paa.dev/reference/schema"
-Repository = "https://github.com/RankOneLabs/paa-runtime"
+Repository = "https://github.com/RankOneLabs/paa"
 
 [project.optional-dependencies]
 # Conformance runs against the published contract artifacts. paa-contracts
