@@ -103,30 +103,29 @@ uv run mypy src/paa_runtime
 
 The conformance suite runs against the published contract artifacts rather
 than fixtures of its own, so that "passes the published conformance suite" is
-a claim about the contract and not about this repo's idea of it. They arrive
-as a dependency:
+a claim about the contract and not about this repo's idea of it.
+
+Those artifacts come from `paa-contracts` — the four normative schemas, the
+positive fixture corpus, and the invalid-case tables, released from the paa.dev
+repo. **It is not on PyPI yet, so today it takes two commands, not one:**
 
 ```bash
-uv sync --extra conformance
+uv sync --extra conformance                                # jsonschema
+uv run --with ../paadotdev/packages/paa-contracts pytest    # the artifacts
 ```
 
-`paa-contracts` carries the four normative schemas, the positive fixture
-corpus, and the invalid-case tables, released from the paa.dev repo. It is a
-**test dependency** — nothing in `paa_runtime` loads a JSON schema at runtime,
-and a production install pulls neither it nor `jsonschema`.
+The extra deliberately does not name `paa-contracts`. An unresolvable
+requirement cannot be locked, and pinning it to a local path breaks plain
+`uv sync` for anyone without a site checkout next door — uv resolves metadata
+for every locked entry regardless of which extras are requested. The `--with`
+form also builds and installs a real wheel, so it exercises the packaged data
+path a release uses rather than a source-tree shortcut.
 
-`paa-contracts` is not on PyPI yet, so it is deliberately *not* in the extra —
-an unresolvable requirement cannot be locked, and pinning it to a local path
-would make plain `uv sync` fail for anyone without a site checkout next door.
-Until it ships, bring it in per-command from a sibling checkout:
+On publication `paa-contracts` joins the extra and the second command goes
+away.
 
-```bash
-uv run --with ../paadotdev/packages/paa-contracts pytest
-```
-
-That builds and installs a real wheel, so it exercises the same packaged data
-path a release uses rather than a source-tree shortcut. On publication it
-joins the extra and the flag goes away.
+Both are **test-only**. Nothing in `paa_runtime` loads a JSON schema at
+runtime, and a production install pulls neither.
 
 ## Status
 
