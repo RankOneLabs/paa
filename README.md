@@ -99,6 +99,34 @@ uv run ruff check src tests
 uv run mypy src/paa_runtime
 ```
 
+### Conformance
+
+The conformance suite runs against the published contract artifacts rather
+than fixtures of its own, so that "passes the published conformance suite" is
+a claim about the contract and not about this repo's idea of it.
+
+Those artifacts come from `paa-contracts` — the four normative schemas, the
+positive fixture corpus, and the invalid-case tables, released from the paa.dev
+repo. **It is not on PyPI yet, so today it takes two commands, not one:**
+
+```bash
+uv sync --extra conformance                                # jsonschema
+uv run --with ../paadotdev/packages/paa-contracts pytest    # the artifacts
+```
+
+The extra deliberately does not name `paa-contracts`. An unresolvable
+requirement cannot be locked, and pinning it to a local path breaks plain
+`uv sync` for anyone without a site checkout next door — uv resolves metadata
+for every locked entry regardless of which extras are requested. The `--with`
+form also builds and installs a real wheel, so it exercises the packaged data
+path a release uses rather than a source-tree shortcut.
+
+On publication `paa-contracts` joins the extra and the second command goes
+away.
+
+Both are **test-only**. Nothing in `paa_runtime` loads a JSON schema at
+runtime, and a production install pulls neither.
+
 ## Status
 
 `0.2.0`, tracking the `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft` schema families. Package and spec versions drift independently — the schema families a release targets are stated here and asserted by the conformance suite, not inferred from the package version.
