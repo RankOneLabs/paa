@@ -40,7 +40,7 @@ jobs:
         # conformance/ is linted here even though it cannot be *run* here:
         # linting is static and needs none of the contract artifacts, so
         # there is no reason to let it rot while the run is blocked.
-        run: uv run ruff check src tests conformance
+        run: uv run ruff check src tests conformance packages
 
       - name: Typecheck
         run: uv run mypy src/paa_runtime
@@ -83,31 +83,45 @@ jobs:
           print('paa_runtime', paa_runtime.__file__)
           "
 
-  # The conformance suite itself now exists and passes — see conformance/ and
-  # the README's Conformance section. What is still missing is a way for *this*
-  # repo's runner to obtain the contract artifacts.
-  #
-  # paa-contracts is not on PyPI, and paa_site — the repo it is released from —
-  # is private, so an anonymous runner here can reach it by neither route.
-  # GITHUB_TOKEN cannot help: it is scoped to this repository alone. Enabling a
-  # job here therefore needs one of:
-  #
-  #   1. paa-contracts published to PyPI. The job then reduces to
-  #      `uv sync --locked --extra conformance` and `uv run pytest conformance`,
-  #      and paa-contracts joins the extra in pyproject.toml; or
-  #   2. a cross-repo read credential for paa_site in this repo's secrets, used
-  #      as `uv run --with "paa-contracts @ git+https://...@github.com/..."`.
-  #
-  # Neither is a decision this file should make quietly, so it is left to the
-  # operator rather than committed half-configured.
-  #
-  # The other direction already works anonymously, because paa-runtime is
-  # public and the site's runner has the artifacts on disk: a cross-check job
-  # in the site repo that checks this repo out and runs `pytest conformance`
-  # against the site's own working tree. That is what the extraction spec asks
-  # for — a schema change that breaks the implementation should break the site
-  # build at the source — and it is the site-side follow-up in spec step 5.
-  #
-  # Deliberately not written as a skipping job. A test that skips by default is
-  # a test that is off, and this repo already decided that once — see the
-  # schema-harness swap in the extraction spec.
+  # Conformance runs against the published contract artifacts, which now live
+  # in this repo alongside the implementation they measure. This job existed as
+  # a comment for one release explaining why it could not be written: the
+  # artifacts were in a separate private repo, paa-contracts was not on PyPI,
+  # and GITHUB_TOKEN is scoped to this repository alone. Moving the contract
+  # here dissolved all three at once rather than solving any of them.
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install with the conformance extra
+        run: uv sync --locked --extra conformance
+
+      - name: Conformance
+        # The path argument is required: testpaths is `tests`, so a bare pytest
+        # runs the unit suite and nothing else. Opt-in by invocation, never by
+        # skip marker — paa_contracts raises at import when the artifacts are
+        # absent, so this fails loudly rather than reporting green over an
+        # empty corpus.
+        run: uv run pytest conformance
+
+      - name: Contract package tests
+        # Includes registry parity: the Python contract list and the JS one in
+        # scripts/lib/ are two lists serving two languages, and this is what
+        # stops them diverging silently.
+        run: uv run --package paa-contracts pytest packages/paa-contracts/tests
+
+      - name: Prove the contract wheel carries the artifacts verbatim
+        # A workspace member installs editable, so everything above reads the
+        # working tree and would pass just as happily if the build shipped an
+        # empty package. This is the check that a release would actually carry
+        # the corpus: wheel against tree, both directions, byte for byte.
+        run: |
+          uv build --package paa-contracts
+          uv run --no-cache python packages/paa-contracts/scripts/verify_built_wheel.py dist/paa_contracts-*.whl

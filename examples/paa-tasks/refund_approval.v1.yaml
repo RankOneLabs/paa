@@ -1,0 +1,54 @@
+task: refund_approval
+version: 1
+description: Evaluate a refund request and decide to approve or escalate for human review.
+
+boundary:
+  input: refund_request
+  output: decision
+
+initial_position: hitl
+deployment: active
+
+evaluators:
+  - property: refund_policy_invariants
+    target: output
+    technique: deterministic
+    evaluation_basis:
+      kind: invariant
+      ref: refund_policy_invariants
+    epistemic_status: ground_truth
+    version: "1"
+    authority: blocking
+
+  - property: should_escalate
+    target: output
+    technique: classifier
+    evaluation_basis:
+      kind: reference_label
+      ref: should_escalate_reference_label
+    epistemic_status: ground_truth
+    version: "1"
+    authority: blocking
+
+position_policy:
+  manual: offline
+  hitl: blocking
+  hotl: async
+  autonomous: offline
+
+promotion:
+  from: hitl
+  to: hotl
+  report: refund_approval_promotion_report
+  window:
+    kind: cases
+    size: 200
+  execution: operator_approval
+
+demotion:
+  from: hotl
+  to: hitl
+  trigger: chargebacks_or_complaints_exceed_bound
+  window:
+    kind: cases
+    size: 1

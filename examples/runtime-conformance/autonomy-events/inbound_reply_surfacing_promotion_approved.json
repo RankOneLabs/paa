@@ -1,0 +1,50 @@
+[
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-inbound-001-proposed",
+    "motion_id": "motion-inbound-001",
+    "task": "inbound_reply_surfacing",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_proposed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c/evidence.json",
+    "evidence_sha256": "f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c",
+    "actor": "operator:alice",
+    "reason": "phase1_audit window closed with an eligible decision",
+    "created_at": "2026-01-08T00:10:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-inbound-001-approved",
+    "motion_id": "motion-inbound-001",
+    "task": "inbound_reply_surfacing",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_approved",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c/evidence.json",
+    "evidence_sha256": "f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c",
+    "actor": "operator:alice",
+    "reason": "approved after reviewing the decision artifact",
+    "created_at": "2026-01-08T00:15:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-inbound-001-changed",
+    "motion_id": "motion-inbound-001",
+    "task": "inbound_reply_surfacing",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "position_changed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c/evidence.json",
+    "evidence_sha256": "f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c",
+    "actor": "operator:alice",
+    "reason": "approved after reviewing the decision artifact",
+    "created_at": "2026-01-08T00:15:00.000Z"
+  }
+]

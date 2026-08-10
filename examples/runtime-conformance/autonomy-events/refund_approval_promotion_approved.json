@@ -1,0 +1,50 @@
+[
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-001-proposed",
+    "motion_id": "motion-refund-001",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_proposed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea/evidence.json",
+    "evidence_sha256": "22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea",
+    "actor": "operator:dana",
+    "reason": "refund_approval_promotion_report window closed eligible",
+    "created_at": "2026-04-01T08:00:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-001-approved",
+    "motion_id": "motion-refund-001",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_approved",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea/evidence.json",
+    "evidence_sha256": "22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea",
+    "actor": "operator:dana",
+    "reason": "approved after review",
+    "created_at": "2026-04-01T08:30:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-001-changed",
+    "motion_id": "motion-refund-001",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "position_changed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea/evidence.json",
+    "evidence_sha256": "22628a9c158476335c77aa7f7f73aa12f6196e1091dceb5ade0e0a510c379dea",
+    "actor": "operator:dana",
+    "reason": "approved after review",
+    "created_at": "2026-04-01T08:30:00.000Z"
+  }
+]

@@ -1,0 +1,234 @@
+[
+  {
+    "id": "event_missing_actor",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "remove", "path": "/0/actor" }],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "",
+      "params": { "missingProperty": "actor" }
+    }
+  },
+  {
+    "id": "event_invalid_created_at",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/0/created_at", "value": "not-a-date" }],
+    "expected": {
+      "stage": "structural",
+      "code": "format",
+      "path": "/created_at"
+    }
+  },
+  {
+    "id": "event_invalid_task_identifier",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/0/task", "value": "Inbound Reply" }],
+    "expected": {
+      "stage": "structural",
+      "code": "pattern",
+      "path": "/task"
+    }
+  },
+  {
+    "id": "event_malformed_evidence_sha256",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/0/evidence_sha256", "value": "abc123" }],
+    "expected": {
+      "stage": "structural",
+      "code": "pattern",
+      "path": "/evidence_sha256"
+    }
+  },
+  {
+    "id": "event_stored_status",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/0/status", "value": "approved" }],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "",
+      "params": { "additionalProperty": "status" }
+    }
+  },
+  {
+    "id": "event_identity_drift",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/1/from_position", "value": "manual" }],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.identity_drift",
+      "path": "/1"
+    }
+  },
+  {
+    "id": "event_illegal_order_missing_approval",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "remove", "path": "/1" }],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.illegal_order",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_contradictory_terminal",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/3",
+        "value": {
+          "event_schema": "paa-autonomy-event/0.1.0-draft",
+          "id": "evt-inbound-001-rejected",
+          "motion_id": "motion-inbound-001",
+          "task": "inbound_reply_surfacing",
+          "declaration_version": 1,
+          "scope": null,
+          "event": "motion_rejected",
+          "from_position": "hitl",
+          "to_position": "hotl",
+          "evidence_ref": "evidence/paa/f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c/evidence.json",
+          "evidence_sha256": "f7f6f50c9e66bb8ed35f6b50c07e5cc17ca95d4f925e38dea597d1dafe44df2c",
+          "actor": "operator:alice",
+          "reason": "second-guessed after the fact",
+          "created_at": "2026-01-08T00:20:00.000Z"
+        }
+      }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.contradictory_terminal_events",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_no_proposal",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "remove", "path": "/0" }],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.no_proposal",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_duplicate_event_kind",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [{ "kind": "set", "path": "/2/event", "value": "motion_approved" }],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.duplicate_event_kind",
+      "path": "/2"
+    }
+  },
+  {
+    "id": "event_undeclared_transition",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      { "kind": "set", "path": "/0/to_position", "value": "autonomous" },
+      { "kind": "set", "path": "/1/to_position", "value": "autonomous" },
+      { "kind": "set", "path": "/2/to_position", "value": "autonomous" }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.undeclared_transition",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_undeclared_scope",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      { "kind": "set", "path": "/0/scope", "value": "publish:bluesky" },
+      { "kind": "set", "path": "/1/scope", "value": "publish:bluesky" },
+      { "kind": "set", "path": "/2/scope", "value": "publish:bluesky" }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.undeclared_scope",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_unregistered_declaration_version",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      { "kind": "set", "path": "/0/declaration_version", "value": 99 },
+      { "kind": "set", "path": "/1/declaration_version", "value": 99 },
+      { "kind": "set", "path": "/2/declaration_version", "value": 99 }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.unregistered_declaration_version",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_ref_hash_disagreement",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/0/evidence_sha256",
+        "value": "fb69c8b1a7a2db24046cdaa90fafe6ddfb98440246e45f10361e15bf73e34b23"
+      },
+      {
+        "kind": "set",
+        "path": "/1/evidence_sha256",
+        "value": "fb69c8b1a7a2db24046cdaa90fafe6ddfb98440246e45f10361e15bf73e34b23"
+      },
+      {
+        "kind": "set",
+        "path": "/2/evidence_sha256",
+        "value": "fb69c8b1a7a2db24046cdaa90fafe6ddfb98440246e45f10361e15bf73e34b23"
+      }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.ref_hash_disagreement",
+      "path": ""
+    }
+  },
+  {
+    "id": "event_evidence_missing",
+    "base": "inbound_reply_surfacing_promotion_approved.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/0/evidence_ref",
+        "value": "evidence/paa/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff/evidence.json"
+      },
+      {
+        "kind": "set",
+        "path": "/0/evidence_sha256",
+        "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      {
+        "kind": "set",
+        "path": "/1/evidence_ref",
+        "value": "evidence/paa/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff/evidence.json"
+      },
+      {
+        "kind": "set",
+        "path": "/1/evidence_sha256",
+        "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      {
+        "kind": "set",
+        "path": "/2/evidence_ref",
+        "value": "evidence/paa/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff/evidence.json"
+      },
+      {
+        "kind": "set",
+        "path": "/2/evidence_sha256",
+        "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    ],
+    "expected": {
+      "stage": "event_semantic",
+      "code": "event.evidence_missing",
+      "path": ""
+    }
+  }
+]

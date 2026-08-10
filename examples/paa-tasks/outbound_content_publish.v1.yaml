@@ -1,0 +1,91 @@
+task: outbound_content_publish
+version: 1
+description: Publish a content revision to a configured external platform.
+
+boundary:
+  input: outbound_draft_revision
+  output: publication
+
+initial_position: hitl
+deployment: active
+
+scopes:
+  - publish:bluesky
+  - publish:farcaster
+
+evaluators:
+  - property: outbound_content_invariants
+    target: output
+    technique: deterministic
+    evaluation_basis:
+      kind: invariant
+      ref: outbound_content_invariants
+    epistemic_status: ground_truth
+    version: "1"
+    authority: blocking
+
+  - property: draft_quality
+    target: output
+    technique: llm_judge
+    evaluation_basis:
+      kind: rubric
+      ref: draft_quality_rubric
+    epistemic_status: proxy
+    version: "1"
+    authority: advisory
+
+  - property: publish_authorization
+    target: process
+    technique: human
+    evaluation_basis:
+      kind: human_gold
+      ref: publish_authorization_human_gold
+    epistemic_status: ground_truth
+    version: "1"
+    authority: blocking
+
+  - property: publish_quality
+    target: outcome
+    technique: human
+    evaluation_basis:
+      kind: human_gold
+      ref: publish_quality_human_gold
+    epistemic_status: ground_truth
+    version: "1"
+    authority: advisory
+
+position_policy:
+  manual: offline
+  hitl: blocking
+  # At HOTL the human authorization gate becomes post-hoc review, while the
+  # deterministic content invariants keep blocking before publication. A single
+  # placement value for the whole position cannot express that.
+  hotl:
+    default: blocking
+    overrides:
+      - selector:
+          property: publish_authorization
+          technique: human
+        placement: async
+      - selector:
+          property: publish_quality
+          technique: human
+        placement: async
+  autonomous: offline
+
+promotion:
+  from: hitl
+  to: hotl
+  report: outbound_publish_promotion_report
+  window:
+    kind: cases
+    size: 50
+  execution: operator_approval
+
+demotion:
+  from: hotl
+  to: hitl
+  trigger: operator_decision_or_policy_failure
+  window:
+    kind: cases
+    size: 1

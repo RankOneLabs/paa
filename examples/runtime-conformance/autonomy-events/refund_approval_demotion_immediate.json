@@ -1,0 +1,50 @@
+[
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-002-proposed",
+    "motion_id": "motion-refund-002",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_proposed",
+    "from_position": "hotl",
+    "to_position": "hitl",
+    "evidence_ref": "evidence/paa/eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449/evidence.json",
+    "evidence_sha256": "eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449",
+    "actor": "operator:dana",
+    "reason": "chargebacks_or_complaints_exceed_bound — immediate demotion",
+    "created_at": "2026-04-10T00:00:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-002-approved",
+    "motion_id": "motion-refund-002",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "motion_approved",
+    "from_position": "hotl",
+    "to_position": "hitl",
+    "evidence_ref": "evidence/paa/eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449/evidence.json",
+    "evidence_sha256": "eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449",
+    "actor": "operator:dana",
+    "reason": "chargebacks_or_complaints_exceed_bound — immediate demotion",
+    "created_at": "2026-04-10T00:00:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-refund-002-changed",
+    "motion_id": "motion-refund-002",
+    "task": "refund_approval",
+    "declaration_version": 1,
+    "scope": null,
+    "event": "position_changed",
+    "from_position": "hotl",
+    "to_position": "hitl",
+    "evidence_ref": "evidence/paa/eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449/evidence.json",
+    "evidence_sha256": "eeeec18f5c3dada7f651fefec073cba63a93fcafff6f8d3ba5c5e8c608ea4449",
+    "actor": "operator:dana",
+    "reason": "chargebacks_or_complaints_exceed_bound — immediate demotion",
+    "created_at": "2026-04-10T00:00:00.000Z"
+  }
+]

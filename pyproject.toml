@@ -34,35 +34,37 @@ Documentation = "https://www.paa.dev/reference/schema"
 Repository = "https://github.com/RankOneLabs/paa"
 
 [project.optional-dependencies]
-# Conformance runs against the published contract artifacts. paa-contracts
-# carries the schemas, the positive fixture corpus, and the invalid-case
-# tables, released from the paa.dev repo. Nothing in paa_runtime loads a JSON
-# schema at runtime — declarations.py explicitly declines to re-implement the
-# external schema — so this stays test-only and never enters a production
-# install.
+# Conformance runs against the published contract artifacts: the four schemas,
+# the positive fixture corpus, and the invalid-case tables, all carried by
+# paa-contracts.
+#
+# paa-contracts can finally be named here. It used to be conspicuously absent
+# — it lived in a separate private repo, an unresolvable requirement cannot be
+# locked, and a path entry to a sibling checkout broke plain `uv sync` for
+# anyone without that checkout, because uv resolves metadata for every locked
+# entry regardless of which extras are requested. Every part of that problem
+# was an artifact of where the contract sat, and moving it into this repo
+# dissolved all of it: a workspace member resolves for everyone with a
+# checkout, which is everyone who can run the suite at all.
+#
+# Still test-only. Nothing in paa_runtime loads a JSON schema at runtime —
+# declarations.py explicitly declines to re-implement the external schema — so
+# a production install pulls neither of these.
 conformance = [
     "jsonschema>=4.23",
+    "paa-contracts",
 ]
 
-# paa-contracts is missing from that list on purpose, and it is the other half
-# of what conformance needs — the schemas, the positive fixture corpus, and
-# the invalid-case tables.
-#
-# It is not on PyPI yet, and an unresolvable requirement cannot be locked. A
-# [tool.uv.sources] path entry to a sibling site checkout does lock, but uv
-# resolves metadata for every locked entry regardless of which extras are
-# requested, so plain `uv sync` then fails for anyone who does not happen to
-# have the site repo next door. Breaking the base install of a package whose
-# whole pitch is that it installs anywhere is a far worse trade than an extra
-# that is briefly incomplete.
-#
-# Until it ships, bring it in per-command — this builds and installs a real
-# wheel, so it exercises the packaged data path the release actually uses:
-#
-#     uv run --with ../paadotdev/packages/paa-contracts pytest conformance
-#
-# On publication it joins the list above as `paa-contracts>=0.1.0` and this
-# comment goes away.
+# One repo, two published packages. The contract is data with no dependencies
+# and no implementation; the runtime is one implementation of it. They version
+# and release independently, and a consumer who wants only the contract must
+# be able to take it without dragging a Python implementation along — that is
+# what makes implementation-neutrality structural rather than asserted.
+[tool.uv.workspace]
+members = ["packages/paa-contracts"]
+
+[tool.uv.sources]
+paa-contracts = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paa.dev/paa-evidence-record.schema.json",
+  "title": "PAA Evidence Record",
+  "description": "Universal runtime envelope for one evaluator's verdict on one subject, produced against a PAA task declaration.",
+  "x-paa-schema-version": "paa-evidence-record/0.1.0-draft",
+  "type": "object",
+  "required": [
+    "record_schema",
+    "record_id",
+    "task",
+    "declaration_version",
+    "scope",
+    "subject",
+    "boundary",
+    "evaluator",
+    "verdict",
+    "producer",
+    "timestamps",
+    "source_references",
+    "payload_schema",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "evaluator_target": {
+      "type": "string",
+      "enum": ["input", "process", "output", "outcome"]
+    },
+    "technique": {
+      "type": "string",
+      "enum": ["deterministic", "classifier", "llm_judge", "human"]
+    },
+    "evaluation_basis": {
+      "type": "object",
+      "required": ["kind", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["invariant", "reference_label", "rubric", "human_gold", "downstream_result"]
+        },
+        "ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "epistemic_status": {
+      "type": "string",
+      "description": "Whether governance designates this evaluator as the task's authoritative truth signal or as a proxy. ground_truth does not imply infallibility.",
+      "enum": ["proxy", "ground_truth"]
+    },
+    "authority": {
+      "type": "string",
+      "enum": ["advisory", "blocking"]
+    }
+  },
+  "properties": {
+    "record_schema": {
+      "type": "string",
+      "const": "paa-evidence-record/0.1.0-draft"
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Stable identifier for this evidence record.",
+      "minLength": 1
+    },
+    "task": {
+      "type": "string",
+      "description": "The task declaration this evidence was produced against.",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 1
+    },
+    "declaration_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scope": {
+      "description": "The exact declared scope this evidence belongs to, or null when the task declares no scopes.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "subject": {
+      "type": "object",
+      "description": "The exact case or run this evidence evaluates.",
+      "required": ["kind", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["case", "run"] },
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "description": "References to the exact input and, if produced, output the evaluator observed.",
+      "required": ["input_ref", "output_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "input_ref": { "type": "string", "minLength": 1 },
+        "output_ref": { "type": ["string", "null"], "minLength": 1 }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "description": "The complete declared evaluator identity that produced this evidence.",
+      "required": [
+        "property",
+        "target",
+        "technique",
+        "evaluation_basis",
+        "epistemic_status",
+        "version",
+        "authority"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "property": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/definitions/evaluator_target" },
+        "technique": { "$ref": "#/definitions/technique" },
+        "evaluation_basis": { "$ref": "#/definitions/evaluation_basis" },
+        "epistemic_status": { "$ref": "#/definitions/epistemic_status" },
+        "version": { "type": "string", "minLength": 1 },
+        "authority": { "$ref": "#/definitions/authority" }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "description": "The evaluator's native verdict. Task-specific payload schemas may narrow value.",
+      "required": ["value", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string", "minLength": 1 },
+        "reason_codes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "required": ["id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "timestamps": {
+      "type": "object",
+      "required": ["started_at", "completed_at", "recorded_at"],
+      "additionalProperties": false,
+      "properties": {
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "recorded_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "source_references": {
+      "type": "array",
+      "description": "Producer-owned references to the source rows or artifacts behind this evidence.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "payload_schema": {
+      "type": "string",
+      "description": "URI of the task-specific companion schema that narrows payload (and, where needed, verdict.value).",
+      "format": "uri"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Task-specific evidence detail. Typed by the referenced payload_schema."
+    }
+  }
+}

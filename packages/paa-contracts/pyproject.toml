@@ -1,0 +1,84 @@
+[project]
+name = "paa-contracts"
+version = "0.1.0"
+description = "Published Progressive Autonomy Architecture contract artifacts: the four normative JSON Schemas, the positive fixture corpus, and the invalid-case tables"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Rank One Labs" }]
+keywords = ["paa", "progressive-autonomy-architecture", "json-schema", "conformance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+]
+# No dependencies, deliberately. This package is data plus the paths to it.
+# A conformance runner brings its own validator (jsonschema, Ajv, whatever
+# the implementation language offers); baking one in here would make the
+# contract artifacts carry an opinion about how they get checked, which is
+# the opposite of what an implementation-neutral contract is for.
+dependencies = []
+
+[project.urls]
+Homepage = "https://www.paa.dev"
+Documentation = "https://www.paa.dev/reference/schema"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paa_contracts"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "hatch_build.py", "README.md", "pyproject.toml"]
+
+# The contract artifacts are NOT vendored into this directory. hatch_build.py
+# pulls them from the site's working tree at build time; they land under
+# paa_contracts/_data/ in both built artifacts.
+#
+# This is the whole point of the packaging arrangement. The site serves
+# schemas/ and examples/ at their published URLs and its eleven-stage
+# validator reads them straight from the tree; the runtime reads the same
+# bytes as installed package data. If this directory held copies instead,
+# there would be two sources of truth one careless commit apart, and every
+# conformance claim would be a claim about the copy. Build-time inclusion
+# makes "one source of truth" a property of the build rather than a rule
+# someone has to remember.
+#
+# The consequence to know about: a release can only be cut from a full
+# checkout of the site repo. That is correct — the contract artifacts are
+# the site's, and a release built from anything less would be partial.
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["paa_contracts"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
