@@ -35,12 +35,15 @@ from __future__ import annotations
 
 from paa_runtime.config import RuntimeConfig
 from paa_runtime.declarations import (
-    EXPECTED_POSITION_POLICY,
     AutonomyPosition,
     Deployment,
     PaaDeclarationError,
     PaaDemotion,
+    PaaEvaluationBasis,
     PaaEvaluator,
+    PaaEvaluatorSelector,
+    PaaPlacement,
+    PaaPlacementOverride,
     PaaPositionPolicy,
     PaaPromotion,
     PaaTaskDeclaration,
@@ -96,7 +99,7 @@ from paa_runtime.service import (
 from paa_runtime.sqlite_store import SqliteEventStore
 from paa_runtime.store import AutonomyEvent, EventStore
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Construction surface
@@ -123,14 +126,17 @@ __all__ = [
     # Declarations
     "PaaTaskDeclaration",
     "PaaEvaluator",
+    "PaaEvaluationBasis",
     "PaaWindow",
     "PaaPromotion",
     "PaaDemotion",
     "PaaPositionPolicy",
+    "PaaPlacement",
+    "PaaPlacementOverride",
+    "PaaEvaluatorSelector",
     "ProducerRegistration",
     "load_paa_declarations",
     "get_paa_declaration",
-    "EXPECTED_POSITION_POLICY",
     # Evidence
     "store_evidence",
     "verify_evidence",

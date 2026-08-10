@@ -26,9 +26,10 @@ surface.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Literal
 
 import yaml
@@ -51,21 +52,6 @@ _WINDOW_KINDS: frozenset[str] = frozenset({"cases", "duration"})
 _PROMOTION_EXECUTIONS: frozenset[str] = frozenset({"operator_approval", "automatic"})
 _POSITION_POLICY_MODES: frozenset[str] = frozenset({"offline", "blocking", "async"})
 
-# The one runtime vocabulary every checked-in declaration's position_policy
-# must declare, exactly. manual/autonomous are offline (no governed effect
-# ever runs), hitl is blocking (synchronous human authorization required
-# before the effect), hotl is async (the effect runs, review happens after).
-# Declaration loading fails closed if a declaration maps a supported
-# position differently — runtime semantics and the validated declaration
-# must never silently diverge.
-EXPECTED_POSITION_POLICY: dict[str, str] = {
-    "manual": "offline",
-    "hitl": "blocking",
-    "hotl": "async",
-    "autonomous": "offline",
-}
-
-
 class PaaDeclarationError(ValueError):
     """A PAA task declaration is missing, malformed, or unresolved.
 
@@ -73,21 +59,46 @@ class PaaDeclarationError(ValueError):
     declarations directory or file, a duplicate declaration for the same
     task, a malformed or absent access field, an unsupported position or
     deployment value, or an evaluator whose (property, target, technique,
-    oracle, version, authority) tuple does not resolve against
-    the supplied producer registry. Callers must never catch this and
-    substitute an
-    invented or permissive default declaration.
+    evaluation_basis, epistemic_status, version, authority) tuple does not
+    resolve against the supplied producer registry. Callers must never
+    catch this and substitute an invented or permissive default
+    declaration.
     """
 
 
 @dataclass(frozen=True, slots=True)
+class PaaEvaluationBasis:
+    """The criteria and procedure that ground one evaluator's verdict.
+
+    ``kind`` names the sort of grounding (an invariant set, a reference
+    label set, a rubric, a human-gold protocol, a downstream measure) and
+    ``ref`` names the concrete one. Both are carried because neither
+    identifies a producer alone: two rubric-graded evaluators of the same
+    property are different producers when their rubrics differ.
+    """
+
+    kind: str
+    ref: str
+
+
+@dataclass(frozen=True, slots=True)
 class PaaEvaluator:
-    """One declared evaluator, exactly as authored in the YAML declaration."""
+    """One declared evaluator, exactly as authored in the YAML declaration.
+
+    ``evaluation_basis`` and ``epistemic_status`` are two axes the contract
+    keeps separate: *how* a verdict is grounded, and whether governance
+    designates it the task's authoritative truth signal or an
+    approximation. An earlier revision of this loader carried a single
+    ``oracle`` field conflating them, which could not express the published
+    declarations at all — a rubric-graded proxy and a rubric-graded ground
+    truth collapsed to the same identity.
+    """
 
     property: str
     target: str
     technique: str
-    oracle: str
+    evaluation_basis: PaaEvaluationBasis
+    epistemic_status: str
     version: str
     authority: str
 
@@ -122,18 +133,89 @@ class PaaDemotion:
 
 
 @dataclass(frozen=True, slots=True)
-class PaaPositionPolicy:
-    """Runtime semantics per autonomy position, exactly as declared.
+class PaaEvaluatorSelector:
+    """Selects exactly one declared evaluator by a subset of its identity.
 
-    Validated at load time against ``EXPECTED_POSITION_POLICY`` — the
-    checked-in vocabulary (manual/autonomous offline, hitl blocking, hotl
-    async) is fixed, not merely a convention any declaration may redefine.
+    ``version`` is optional: omit it when property and technique already
+    name one evaluator, supply it to disambiguate when the same property
+    is evaluated at two versions. Loading rejects a selector that resolves
+    to none or to more than one.
     """
 
-    manual: PositionPolicyMode
-    hitl: PositionPolicyMode
-    hotl: PositionPolicyMode
-    autonomous: PositionPolicyMode
+    property: str
+    technique: str
+    version: str | None
+
+    def matches(self, evaluator: PaaEvaluator) -> bool:
+        return (
+            evaluator.property == self.property
+            and evaluator.technique == self.technique
+            and (self.version is None or evaluator.version == self.version)
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PaaPlacementOverride:
+    """One evaluator's placement, overriding its position's default."""
+
+    selector: PaaEvaluatorSelector
+    placement: PositionPolicyMode
+
+
+@dataclass(frozen=True, slots=True)
+class PaaPlacement:
+    """Placement at one declared autonomy position.
+
+    The contract admits two authored forms — a bare mode applying to every
+    declared evaluator, or a default plus per-evaluator overrides. Both
+    parse to this one shape, so callers never branch on which was written:
+    the bare form is a default with no overrides.
+    """
+
+    default: PositionPolicyMode
+    overrides: tuple[PaaPlacementOverride, ...]
+
+    def for_evaluator(self, evaluator: PaaEvaluator) -> PositionPolicyMode:
+        """The mode governing *evaluator* at this position.
+
+        Loading rejects ambiguous and duplicated selectors, so at most one
+        override can match and first-match is total rather than arbitrary.
+        """
+        for override in self.overrides:
+            if override.selector.matches(evaluator):
+                return override.placement
+        return self.default
+
+
+@dataclass(frozen=True, slots=True)
+class PaaPositionPolicy:
+    """Placement per *declared* autonomy position.
+
+    The contract admits any non-empty subset of the four positions, so a
+    position the declaration omits is absent here rather than defaulted —
+    and the cross-field rules enforced at load time require only that
+    every position the declaration *references* (initial, and both
+    transition endpoints) is one it declares.
+
+    An earlier revision of this loader required all four positions and
+    pinned them to a fixed table (manual/autonomous offline, hitl
+    blocking, hotl async). The published contract makes placement
+    declaration-controlled and refinable per evaluator, which that table
+    could not express: a task may hold most evaluators blocking at hotl
+    while letting its human gates run async.
+    """
+
+    placements: Mapping[str, PaaPlacement]
+
+    def __contains__(self, position: str) -> bool:
+        return position in self.placements
+
+    def __getitem__(self, position: str) -> PaaPlacement:
+        return self.placements[position]
+
+    @property
+    def declared_positions(self) -> tuple[str, ...]:
+        return tuple(sorted(self.placements))
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,7 +247,8 @@ class ProducerRegistration:
     property: str
     target: str
     technique: str
-    oracle: str
+    evaluation_basis: PaaEvaluationBasis
+    epistemic_status: str
     version: str
     authority: str
     status: Literal["implemented", "future"]
@@ -175,12 +258,14 @@ _REQUIRED_TASK_KEYS: frozenset[str] = frozenset({
     "task", "version", "deployment", "initial_position", "evaluators",
     "position_policy", "promotion", "demotion",
 })
-_REQUIRED_POSITION_POLICY_KEYS: frozenset[str] = frozenset({
-    "manual", "hitl", "hotl", "autonomous",
-})
+_REQUIRED_PLACEMENT_KEYS: frozenset[str] = frozenset({"default", "overrides"})
+_REQUIRED_OVERRIDE_KEYS: frozenset[str] = frozenset({"selector", "placement"})
+_REQUIRED_SELECTOR_KEYS: frozenset[str] = frozenset({"property", "technique"})
 _REQUIRED_EVALUATOR_KEYS: frozenset[str] = frozenset({
-    "property", "target", "technique", "oracle", "version", "authority",
+    "property", "target", "technique", "evaluation_basis", "epistemic_status",
+    "version", "authority",
 })
+_REQUIRED_EVALUATION_BASIS_KEYS: frozenset[str] = frozenset({"kind", "ref"})
 _REQUIRED_PROMOTION_KEYS: frozenset[str] = frozenset({
     "from", "to", "report", "window", "execution",
 })
@@ -197,7 +282,8 @@ def _resolve_producer(
             registration.property == evaluator.property
             and registration.target == evaluator.target
             and registration.technique == evaluator.technique
-            and registration.oracle == evaluator.oracle
+            and registration.evaluation_basis == evaluator.evaluation_basis
+            and registration.epistemic_status == evaluator.epistemic_status
             and registration.version == evaluator.version
             and registration.authority == evaluator.authority
         ):
@@ -281,30 +367,105 @@ def _build_demotion(raw: object, path: Path) -> PaaDemotion:
     )
 
 
+def _require_mode(raw: object, what: str, path: Path) -> PositionPolicyMode:
+    if not isinstance(raw, str) or raw not in _POSITION_POLICY_MODES:
+        raise PaaDeclarationError(
+            f"{path}: {what} is unsupported: {raw!r} "
+            f"(must be one of {sorted(_POSITION_POLICY_MODES)})"
+        )
+    return raw  # type: ignore[return-value]
+
+
+def _build_selector(raw: object, what: str, path: Path) -> PaaEvaluatorSelector:
+    selector_raw = _require_mapping(raw, what, path)
+    _require_keys(selector_raw, _REQUIRED_SELECTOR_KEYS, what, path)
+
+    for key in ("property", "technique"):
+        value = selector_raw[key]
+        if not isinstance(value, str) or not value:
+            raise PaaDeclarationError(f"{path}: {what} {key!r} must be a non-empty string")
+
+    version = selector_raw.get("version")
+    if version is not None and (not isinstance(version, str) or not version):
+        raise PaaDeclarationError(f"{path}: {what} 'version' must be a non-empty string")
+
+    return PaaEvaluatorSelector(
+        property=selector_raw["property"],  # type: ignore[arg-type]
+        technique=selector_raw["technique"],  # type: ignore[arg-type]
+        version=version,
+    )
+
+
+def _build_placement(raw: object, position: str, path: Path) -> PaaPlacement:
+    what = f"position_policy {position!r}"
+
+    # The bare form: one mode for every declared evaluator.
+    if isinstance(raw, str):
+        return PaaPlacement(default=_require_mode(raw, f"{what} placement", path), overrides=())
+
+    placement_raw = _require_mapping(raw, what, path)
+    _require_keys(placement_raw, _REQUIRED_PLACEMENT_KEYS, what, path)
+
+    overrides_raw = placement_raw["overrides"]
+    if not isinstance(overrides_raw, list) or not overrides_raw:
+        raise PaaDeclarationError(f"{path}: {what} 'overrides' must be a non-empty list")
+
+    overrides: list[PaaPlacementOverride] = []
+    for index, override_raw in enumerate(overrides_raw):
+        where = f"{what} overrides/{index}"
+        override_mapping = _require_mapping(override_raw, where, path)
+        _require_keys(override_mapping, _REQUIRED_OVERRIDE_KEYS, where, path)
+        overrides.append(
+            PaaPlacementOverride(
+                selector=_build_selector(override_mapping["selector"], f"{where} selector", path),
+                placement=_require_mode(
+                    override_mapping["placement"], f"{where} placement", path
+                ),
+            )
+        )
+
+    return PaaPlacement(
+        default=_require_mode(placement_raw["default"], f"{what} default", path),
+        overrides=tuple(overrides),
+    )
+
+
 def _build_position_policy(raw: object, path: Path) -> PaaPositionPolicy:
     policy_raw = _require_mapping(raw, "position_policy", path)
-    _require_keys(policy_raw, _REQUIRED_POSITION_POLICY_KEYS, "position_policy", path)
-
-    resolved: dict[str, str] = {}
-    for position in sorted(_REQUIRED_POSITION_POLICY_KEYS):
-        mode = policy_raw[position]
-        if not isinstance(mode, str) or mode not in _POSITION_POLICY_MODES:
-            raise PaaDeclarationError(
-                f"{path}: position_policy {position!r} is unsupported: {mode!r} "
-                f"(must be one of {sorted(_POSITION_POLICY_MODES)})"
-            )
-        resolved[position] = mode
-
-    if resolved != EXPECTED_POSITION_POLICY:
+    if not policy_raw:
         raise PaaDeclarationError(
-            f"{path}: position_policy {resolved} does not match the fixed "
-            f"runtime vocabulary {EXPECTED_POSITION_POLICY}"
+            f"{path}: 'position_policy' must declare at least one position"
         )
+
+    unknown = sorted(set(policy_raw) - _POSITIONS)
+    if unknown:
+        raise PaaDeclarationError(
+            f"{path}: position_policy declares unsupported position(s) {unknown} "
+            f"(must be among {sorted(_POSITIONS)})"
+        )
+
     return PaaPositionPolicy(
-        manual=resolved["manual"],  # type: ignore[arg-type]
-        hitl=resolved["hitl"],  # type: ignore[arg-type]
-        hotl=resolved["hotl"],  # type: ignore[arg-type]
-        autonomous=resolved["autonomous"],  # type: ignore[arg-type]
+        placements=MappingProxyType({
+            position: _build_placement(policy_raw[position], position, path)
+            for position in sorted(policy_raw)
+        })
+    )
+
+
+def _build_evaluation_basis(raw: object, path: Path) -> PaaEvaluationBasis:
+    basis_raw = _require_mapping(raw, "evaluation_basis", path)
+    _require_keys(basis_raw, _REQUIRED_EVALUATION_BASIS_KEYS, "evaluation_basis", path)
+
+    for key in ("kind", "ref"):
+        value = basis_raw[key]
+        if not isinstance(value, str) or not value:
+            raise PaaDeclarationError(
+                f"{path}: evaluation_basis {key!r} must be a non-empty string"
+            )
+
+    return PaaEvaluationBasis(
+        kind=basis_raw["kind"],  # type: ignore[arg-type]
+        ref=basis_raw["ref"],  # type: ignore[arg-type]
     )
 
 
@@ -314,7 +475,7 @@ def _build_evaluator(
     evaluator_raw = _require_mapping(raw, "evaluator entry", path)
     _require_keys(evaluator_raw, _REQUIRED_EVALUATOR_KEYS, "evaluator entry", path)
 
-    for key in ("property", "target", "technique", "oracle", "authority"):
+    for key in ("property", "target", "technique", "epistemic_status", "authority"):
         value = evaluator_raw[key]
         if not isinstance(value, str) or not value:
             raise PaaDeclarationError(f"{path}: evaluator {key!r} must be a non-empty string")
@@ -327,14 +488,17 @@ def _build_evaluator(
         property=evaluator_raw["property"],  # type: ignore[arg-type]
         target=evaluator_raw["target"],  # type: ignore[arg-type]
         technique=evaluator_raw["technique"],  # type: ignore[arg-type]
-        oracle=evaluator_raw["oracle"],  # type: ignore[arg-type]
+        evaluation_basis=_build_evaluation_basis(evaluator_raw["evaluation_basis"], path),
+        epistemic_status=evaluator_raw["epistemic_status"],  # type: ignore[arg-type]
         version=version,
         authority=evaluator_raw["authority"],  # type: ignore[arg-type]
     )
     if _resolve_producer(evaluator, registry) is None:
+        basis = evaluator.evaluation_basis
         raise PaaDeclarationError(
             f"{path}: evaluator {evaluator.property!r} "
-            f"({evaluator.target}/{evaluator.technique}/{evaluator.oracle} "
+            f"({evaluator.target}/{evaluator.technique}/"
+            f"{basis.kind}:{basis.ref}/{evaluator.epistemic_status} "
             f"v{evaluator.version}, {evaluator.authority}) does not resolve "
             "against the supplied producer registry"
         )
@@ -366,6 +530,85 @@ def _build_scopes(task_raw: dict[str, object], path: Path) -> tuple[str, ...] | 
     return tuple(raw)
 
 
+def _validate_placement_overrides(declaration: PaaTaskDeclaration, path: Path) -> None:
+    """Every override names exactly one evaluator, once, and changes something.
+
+    Claims are keyed by the evaluator an override resolves to, never by the
+    selector's own text: a versionless selector and one naming that
+    evaluator's version are different text and the same evaluator.
+    """
+    policy = declaration.position_policy
+    for position in policy.declared_positions:
+        placement = policy[position]
+        claimed_by: dict[int, int] = {}
+
+        for index, override in enumerate(placement.overrides):
+            where = f"position_policy {position!r} overrides/{index}"
+            matches = [
+                i
+                for i, evaluator in enumerate(declaration.evaluators)
+                if override.selector.matches(evaluator)
+            ]
+            if not matches:
+                raise PaaDeclarationError(
+                    f"{path}: {where} selector matches no declared evaluator"
+                )
+            if len(matches) > 1:
+                raise PaaDeclarationError(
+                    f"{path}: {where} selector matches {len(matches)} declared "
+                    "evaluators; add 'version' to disambiguate"
+                )
+
+            claimant = claimed_by.setdefault(matches[0], index)
+            if claimant != index:
+                raise PaaDeclarationError(
+                    f"{path}: {where} selector selects the evaluator already "
+                    f"overridden at {position} by overrides/{claimant}"
+                )
+
+            if override.placement == placement.default:
+                raise PaaDeclarationError(
+                    f"{path}: {where} placement {override.placement!r} equals the "
+                    f"{position} default; remove the override or change its placement"
+                )
+
+
+def _validate_semantics(declaration: PaaTaskDeclaration, path: Path) -> None:
+    """The contract's cross-field rules, which no single field can carry.
+
+    Separate from the per-field builders because each rule spans two parts
+    of the declaration — a position and the policy declaring it, a selector
+    and the evaluator list it resolves against — so none of them can be
+    checked while the pieces are still being built.
+    """
+    policy = declaration.position_policy
+    declared = list(policy.declared_positions)
+
+    if declaration.initial_position not in policy:
+        raise PaaDeclarationError(
+            f"{path}: initial_position {declaration.initial_position!r} is not "
+            f"declared in position_policy (declared: {declared})"
+        )
+
+    transitions = (
+        ("promotion", declaration.promotion.from_position, declaration.promotion.to_position),
+        ("demotion", declaration.demotion.from_position, declaration.demotion.to_position),
+    )
+    for name, from_position, to_position in transitions:
+        if from_position == to_position:
+            raise PaaDeclarationError(
+                f"{path}: {name}.from and {name}.to are both {from_position!r}"
+            )
+        for edge, position in (("from", from_position), ("to", to_position)):
+            if position not in policy:
+                raise PaaDeclarationError(
+                    f"{path}: {name}.{edge} {position!r} is not declared in "
+                    f"position_policy (declared: {declared})"
+                )
+
+    _validate_placement_overrides(declaration, path)
+
+
 def _build_declaration(
     raw: object, path: Path, registry: Sequence[ProducerRegistration],
 ) -> PaaTaskDeclaration:
@@ -391,7 +634,7 @@ def _build_declaration(
     if not isinstance(evaluators_raw, list) or not evaluators_raw:
         raise PaaDeclarationError(f"{path}: 'evaluators' must be a non-empty list")
 
-    return PaaTaskDeclaration(
+    declaration = PaaTaskDeclaration(
         task=task,
         version=version,
         deployment=deployment,  # type: ignore[arg-type]
@@ -402,6 +645,8 @@ def _build_declaration(
         demotion=_build_demotion(task_raw["demotion"], path),
         scopes=_build_scopes(task_raw, path),
     )
+    _validate_semantics(declaration, path)
+    return declaration
 
 
 def load_paa_declarations(
@@ -462,12 +707,15 @@ def get_paa_declaration(
 
 
 __all__ = [
-    "EXPECTED_POSITION_POLICY",
     "AutonomyPosition",
     "Deployment",
     "PaaDeclarationError",
     "PaaDemotion",
+    "PaaEvaluationBasis",
     "PaaEvaluator",
+    "PaaEvaluatorSelector",
+    "PaaPlacement",
+    "PaaPlacementOverride",
     "PaaPositionPolicy",
     "PaaPromotion",
     "PaaTaskDeclaration",

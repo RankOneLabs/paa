@@ -22,7 +22,11 @@ import yaml
 
 import paa_runtime.service as svc
 from paa_runtime.config import RuntimeConfig
-from paa_runtime.declarations import PaaDeclarationError, ProducerRegistration
+from paa_runtime.declarations import (
+    PaaDeclarationError,
+    PaaEvaluationBasis,
+    ProducerRegistration,
+)
 from paa_runtime.events import CURRENT_EVENT_SCHEMA
 from paa_runtime.evidence import EvidenceError
 from paa_runtime.sqlite_store import SqliteEventStore
@@ -35,11 +39,17 @@ FARCASTER = "publish:farcaster"
 _REGISTRY: tuple[ProducerRegistration, ...] = (
     ProducerRegistration(
         property="outbound_content_invariants", target="output", technique="deterministic",
-        oracle="invariant", version="1", authority="blocking", status="implemented",
+        evaluation_basis=PaaEvaluationBasis(
+            kind="invariant", ref="outbound_content_invariants",
+        ),
+        epistemic_status="ground_truth",
+        version="1", authority="blocking", status="implemented",
     ),
     ProducerRegistration(
         property="content_invariants", target="output", technique="deterministic",
-        oracle="invariant", version="1", authority="blocking", status="implemented",
+        evaluation_basis=PaaEvaluationBasis(kind="invariant", ref="content_invariants"),
+        epistemic_status="ground_truth",
+        version="1", authority="blocking", status="implemented",
     ),
 )
 
@@ -62,7 +72,9 @@ _OUTBOUND_TASK: dict[str, object] = {
     "evaluators": [
         {
             "property": "outbound_content_invariants", "target": "output",
-            "technique": "deterministic", "oracle": "invariant",
+            "technique": "deterministic",
+            "evaluation_basis": {"kind": "invariant", "ref": "outbound_content_invariants"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
     ],
@@ -87,7 +99,9 @@ _INBOUND_TASK: dict[str, object] = {
     "evaluators": [
         {
             "property": "content_invariants", "target": "output",
-            "technique": "deterministic", "oracle": "invariant",
+            "technique": "deterministic",
+            "evaluation_basis": {"kind": "invariant", "ref": "content_invariants"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
     ],

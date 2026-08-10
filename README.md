@@ -32,6 +32,7 @@ Adoption is two things: build one `RuntimeConfig`, then call the lifecycle API. 
 from pathlib import Path
 
 from paa_runtime import (
+    PaaEvaluationBasis,
     ProducerRegistration,
     RuntimeConfig,
     SqliteEventStore,
@@ -44,14 +45,21 @@ from paa_runtime import (
 # consumer domain data the runtime does not own: it says which code produces
 # each verdict, and the loader rejects any declaration naming an identity
 # that is not registered here.
+#
+# The identity is the whole evaluator record. evaluation_basis says how the
+# verdict is grounded and in what; epistemic_status says whether governance
+# treats it as the task's authoritative truth signal or as an approximation.
+# They are separate axes on purpose — a rubric-graded proxy and a
+# rubric-graded ground truth are different evaluators.
 MY_PRODUCER_REGISTRY = (
     ProducerRegistration(
         property="refund_correctness",
-        target="refund_decision",
-        technique="rubric_grader",
-        oracle="human_labeled",
+        target="output",
+        technique="llm_judge",
+        evaluation_basis=PaaEvaluationBasis(kind="rubric", ref="refund_correctness_rubric"),
+        epistemic_status="proxy",
         version="1.0.0",
-        authority="team_finance",
+        authority="advisory",
         status="implemented",
     ),
 )
@@ -110,9 +118,51 @@ positive fixture corpus, and the invalid-case tables, released from the paa.dev
 repo. **It is not on PyPI yet, so today it takes two commands, not one:**
 
 ```bash
-uv sync --extra conformance                                # jsonschema
-uv run --with ../paadotdev/packages/paa-contracts pytest    # the artifacts
+uv sync --extra conformance                                             # jsonschema
+uv run --with ../paadotdev/packages/paa-contracts pytest conformance    # the artifacts
 ```
+
+The `conformance` path is required, not decoration. `testpaths` is `tests`, so
+a bare `uv run pytest` runs the unit suite and nothing else — which is what
+lets the unit suite stay green for someone who cloned only this repo. The
+conformance suite is opt-in by *invocation* rather than by skip marker: when it
+is asked to run and the artifacts are absent, `paa_contracts` raises at import
+and the run fails loudly, because a conformance suite reporting green over an
+empty corpus is the one failure mode it must not have.
+
+What it asserts, per fixture class:
+
+- **Vocabulary parity** — every closed set the runtime hardcodes (positions,
+  event types, deployments, placement modes, window kinds, execution modes,
+  the `event_schema` stamp) equals the published schema's own.
+- **Task declarations** — all four published declarations load, their fields
+  survive the load, and each of the eleven `semantic` invalid cases is
+  rejected. Each negative case is run against a registry derived from the
+  *mutated* document, so registry resolution cannot reject a case before the
+  rule under test does.
+- **Event sequences** — every published motion history round-trips through the
+  store field-identical, and is *producible*: driving `propose` then `approve`
+  or `reject` regenerates it, re-deriving the same evidence content address
+  from the bytes alone.
+- **Evidence** — the runtime computes the content address each published
+  artifact is filed under, and fails closed on the deliberately tampered one.
+
+Three stages are deliberately not checked here, and the suite asserts their
+case counts so the boundary moves only on purpose. `structural` cases are
+Ajv's vocabulary and belong to the site's validator. `pinned` cases assert
+facts about particular fixtures, which is corpus-pinning data no
+implementation carries. The nineteen runtime-artifact `*_semantic` cases
+describe validating a *foreign* document against a task index, and this
+package has no import path to point them at — it governs motions it writes
+itself, enforcing those rules at write time rather than by inspecting a
+finished document.
+
+One honest non-match: the published demotion history binds to a
+`paa-decision-artifact`, while `demote` generates and content-addresses its own
+evidence so an emergency demotion never blocks on an operator producing an
+artifact first. Its event stream reproduces the published one in every field
+except the two naming that evidence, and the suite asserts exactly that rather
+than skipping the fixture.
 
 The extra deliberately does not name `paa-contracts`. An unresolvable
 requirement cannot be locked, and pinning it to a local path breaks plain
@@ -129,4 +179,6 @@ runtime, and a production install pulls neither.
 
 ## Status
 
-`0.2.0`, tracking the `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft` schema families. Package and spec versions drift independently — the schema families a release targets are stated here and asserted by the conformance suite, not inferred from the package version.
+`0.3.0`, tracking the `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft` schema families. Package and spec versions drift independently — the schema families a release targets are stated here and asserted by the conformance suite, not inferred from the package version.
+
+`0.3.0` is a breaking change to the declaration access layer, and it is the change that made the sentence above true. `0.2.0` claimed the `paa-task/0.2.1-draft` family while implementing an older evaluator identity — a single `oracle` field where the contract has `evaluation_basis` and `epistemic_status` — and a `position_policy` requiring all four positions at fixed modes, where the contract admits any non-empty subset with per-evaluator placement overrides. It could not load a single published declaration. Building the conformance suite is what surfaced that; `PaaEvaluator`, `ProducerRegistration`, and `PaaPositionPolicy` changed shape to fix it. Nothing was published at `0.2.0`, so no consumer is stranded.

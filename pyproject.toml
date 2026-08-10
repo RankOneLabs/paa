@@ -1,6 +1,6 @@
 [project]
 name = "paa-runtime"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reference implementation of the Progressive Autonomy Architecture control plane: task declarations, motion lifecycle, position resolution, content-addressed evidence, and an append-only autonomy event store"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -59,7 +59,7 @@ conformance = [
 # Until it ships, bring it in per-command — this builds and installs a real
 # wheel, so it exercises the packaged data path the release actually uses:
 #
-#     uv run --with ../paadotdev/packages/paa-contracts pytest
+#     uv run --with ../paadotdev/packages/paa-contracts pytest conformance
 #
 # On publication it joins the list above as `paa-contracts>=0.1.0` and this
 # comment goes away.
