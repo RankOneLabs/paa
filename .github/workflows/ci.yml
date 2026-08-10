@@ -65,9 +65,16 @@ jobs:
         # Built and installed as a wheel, not run from src/, so a packaging
         # mistake — a module left out of the wheel, a data file assumed
         # present — fails here instead of at a consumer's first import.
+        #
+        # --no-cache is load-bearing. uv keys its unpacked-wheel cache on the
+        # distribution filename, which does not change when a wheel is rebuilt
+        # at the same version, so a warm cache can serve a previous build to
+        # this step. Caught exactly that way locally: a wheel that genuinely
+        # contained py.typed was reported as missing it, because the install
+        # resolved to a cached unpack from before the file was added.
         run: |
           uv build --wheel
-          uv run --isolated --no-project --with dist/*.whl python -c "
+          uv run --isolated --no-project --no-cache --with dist/*.whl python -c "
           import paa_runtime
           from paa_runtime import RuntimeConfig, SqliteEventStore, propose, approve, show
           print('paa_runtime', paa_runtime.__file__)
