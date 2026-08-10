@@ -2,16 +2,28 @@
 
 Two claims, in both directions: this implementation accepts every valid
 published declaration, and rejects every invalid case whose stage it
-owns.
+owns — naming, in each rejection, the rule the contract says should
+have fired.
 
-Stage ownership is the contract's, not a convenience. ``structural``
-cases are expressed in Ajv's vocabulary — its error keywords, its JSON
-pointers — and belong to the site's validator; a Python suite asserting
-them would be testing a reimplementation of Ajv. ``pinned`` cases assert
-facts about particular fixtures (that *this* declaration is deployment
-``active``), which is corpus-pinning data no implementation carries.
-What is left, ``semantic``, is the contract's own cross-field rules, and
-those are exactly what a task-declaration implementation must enforce.
+Stage ownership follows from the question this suite asks, which is
+*can this implementation load the document?* ``semantic`` cases are the
+contract's cross-field rules, and enforcing them is precisely what a
+task-declaration loader is for. ``pinned`` cases assert facts about
+particular fixtures (that *this* declaration is deployment ``active``),
+which is corpus-pinning data no implementation carries. ``structural``
+cases are the schema's, and a loader that re-checks them defensively —
+this one does — still is not their author.
+
+That is a statement about which suite, not which language. An earlier
+version of this note claimed the structural cases were expressed in
+Ajv's vocabulary and so could only be checked by Ajv. That is not true:
+``code`` is the JSON Schema keyword, identical across validators, and
+Python's ``jsonschema`` reproduces every published structural code. Only
+``params`` was ever Ajv-shaped, and nothing asserts it. The structural
+and pinned cases belong to a corpus-integrity suite asking a different
+question — *is this negative case actually invalid?* — and the counts
+pinned at the bottom of this file are what keep them from being quietly
+dropped in the meantime.
 """
 
 from __future__ import annotations
@@ -27,7 +39,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from conformance._mutations import apply_mutations
 from conformance.conftest import build_registry
 from paa_runtime import ProducerRegistration, load_paa_declarations
-from paa_runtime.declarations import PaaDeclarationError
+from paa_runtime.declarations import PAA_DECLARATION_CODES, PaaDeclarationError
 
 TASK_SCHEMA: dict[str, Any] = contracts.load_schema("paa-task")
 
@@ -150,10 +162,18 @@ class TestPositiveCorpus:
 
 
 class TestOwnedNegativeCases:
-    """Every semantic case is rejected, fail-closed."""
+    """Every semantic case is rejected by the rule the contract names.
+
+    "Rejected" alone was the weaker claim this suite used to make, and it
+    is satisfied by an implementation that rejects the case for entirely
+    the wrong reason — a mutation that trips a structural guard on its way
+    to the rule under test passes just as happily as one that reaches it.
+    Asserting the code closes that: the loader now says which published
+    rule fired, so the case can insist it was the intended one.
+    """
 
     @pytest.mark.parametrize("case", SEMANTIC_CASES, ids=lambda c: c["id"])
-    def test_semantic_case_is_rejected(
+    def test_semantic_case_is_rejected_with_the_expected_code_and_pointer(
         self, case: dict[str, Any], tmp_path: Path,
     ) -> None:
         base = yaml.safe_load(
@@ -162,8 +182,11 @@ class TestOwnedNegativeCases:
         mutated = apply_mutations(base, case["mutations"])
         _write(tmp_path, mutated)
 
-        with pytest.raises(PaaDeclarationError):
+        with pytest.raises(PaaDeclarationError) as raised:
             load_paa_declarations(tmp_path, registry=_registry_for(mutated))
+
+        assert raised.value.code == case["expected"]["code"]
+        assert raised.value.pointer == case["expected"]["path"]
 
     @pytest.mark.parametrize("case", SEMANTIC_CASES, ids=lambda c: c["id"])
     def test_the_unmutated_base_of_each_case_still_loads(
@@ -178,6 +201,55 @@ class TestOwnedNegativeCases:
         assert load_paa_declarations(tmp_path, registry=_registry_for(base))
 
 
+class TestCodeVocabulary:
+    """The loader's rule names are the contract's, exactly.
+
+    Case-by-case assertions above prove each *case* is rejected by the
+    right rule. They cannot prove the reverse: a rule the contract
+    publishes that this loader simply does not implement has no case to
+    fail, and one the loader invents has no case to catch it. Comparing
+    the two vocabularies as sets is what makes both loud.
+    """
+
+    PUBLISHED_CODES = frozenset(c["expected"]["code"] for c in SEMANTIC_CASES)
+
+    def test_the_loader_names_exactly_the_published_semantic_rules(self) -> None:
+        assert PAA_DECLARATION_CODES == self.PUBLISHED_CODES
+
+    def test_every_declared_code_is_emitted_by_a_real_raise_site(
+        self, tmp_path: Path,
+    ) -> None:
+        # The set above is a constant, and a constant can drift from the
+        # code that is supposed to produce it. Running every case and
+        # collecting what actually came out is the only version of this
+        # claim that a stale entry cannot satisfy.
+        emitted = set()
+        for case in SEMANTIC_CASES:
+            base = yaml.safe_load(
+                contracts.resolve_case_base("task", case).read_text(encoding="utf-8")
+            )
+            mutated = apply_mutations(base, case["mutations"])
+            _write(tmp_path, mutated)
+            try:
+                load_paa_declarations(tmp_path, registry=_registry_for(mutated))
+            except PaaDeclarationError as exc:
+                emitted.add(exc.code)
+
+        assert emitted == PAA_DECLARATION_CODES
+
+    def test_structural_guards_stay_unnamed(self, tmp_path: Path) -> None:
+        # The other half of the discrimination: a failure the schema owns
+        # must not borrow a contract code, or the assertions above would
+        # accept a case rejected on the way to the rule under test.
+        _write(tmp_path, {"task": "", "version": 1})
+
+        with pytest.raises(PaaDeclarationError) as raised:
+            load_paa_declarations(tmp_path, registry=())
+
+        assert raised.value.code is None
+        assert raised.value.pointer is None
+
+
 class TestUnownedStages:
     """What this suite deliberately does not check, and why.
 
@@ -187,7 +259,7 @@ class TestUnownedStages:
     revisited instead of quietly widening.
     """
 
-    def test_structural_cases_are_left_to_the_sites_validator(self) -> None:
+    def test_structural_cases_belong_to_the_corpus_integrity_suite(self) -> None:
         assert len(contracts.invalid_cases("task", stage="structural")) == 37
 
     def test_pinned_cases_are_corpus_pinning_not_contract_rules(self) -> None:
