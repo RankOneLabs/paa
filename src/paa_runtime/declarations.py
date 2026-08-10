@@ -52,6 +52,32 @@ _WINDOW_KINDS: frozenset[str] = frozenset({"cases", "duration"})
 _PROMOTION_EXECUTIONS: frozenset[str] = frozenset({"operator_approval", "automatic"})
 _POSITION_POLICY_MODES: frozenset[str] = frozenset({"offline", "blocking", "async"})
 
+#: The contract's names for the cross-field rules this loader enforces.
+#:
+#: These are not this module's invention. Every string here appears as an
+#: ``expected.code`` in the contract's published ``semantic`` case table,
+#: and the conformance suite asserts the two sets are equal — so a rule
+#: named here that the contract does not recognise fails, and so does a
+#: rule the contract names that nothing here emits.
+#:
+#: Structural rules are deliberately absent. "``version`` must be a
+#: positive integer" is the schema's to state, in the schema's own
+#: keyword vocabulary; this loader re-checks it defensively because it
+#: cannot assume its input was schema-validated, but re-checking a rule
+#: does not make it yours to name. Those raise sites carry ``code=None``,
+#: which is what lets a conformance case distinguish "rejected by the
+#: rule under test" from "rejected on the way there".
+PAA_DECLARATION_CODES: frozenset[str] = frozenset({
+    "initial_position.not_in_policy",
+    "transition.same_position",
+    "transition.position_not_in_policy",
+    "placement.override_matches_no_evaluator",
+    "placement.override_ambiguous",
+    "placement.override_duplicate",
+    "placement.override_redundant",
+})
+
+
 class PaaDeclarationError(ValueError):
     """A PAA task declaration is missing, malformed, or unresolved.
 
@@ -63,7 +89,24 @@ class PaaDeclarationError(ValueError):
     resolve against the supplied producer registry. Callers must never
     catch this and substitute an invented or permissive default
     declaration.
+
+    ``code`` and ``pointer`` locate the failure in the contract's terms
+    rather than in prose: which published rule fired, and the RFC 6901
+    pointer to the offending member of the declaration document. Both are
+    ``None`` for the structural guards above, whose rules belong to the
+    schema.
+
+    They are additive. ``str(exc)`` is unchanged and remains the
+    operator-facing message — the CLI prints it and nothing else, so a
+    caller that predates this reads exactly what it did before.
     """
+
+    def __init__(
+        self, message: str, *, code: str | None = None, pointer: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.pointer = pointer
 
 
 @dataclass(frozen=True, slots=True)
@@ -544,6 +587,10 @@ def _validate_placement_overrides(declaration: PaaTaskDeclaration, path: Path) -
 
         for index, override in enumerate(placement.overrides):
             where = f"position_policy {position!r} overrides/{index}"
+            # Unescaped by construction: _build_position_policy rejects any
+            # key outside _POSITIONS, none of which contain '/' or '~', so
+            # no position name can reach here needing RFC 6901 escaping.
+            at = f"/position_policy/{position}/overrides/{index}"
             matches = [
                 i
                 for i, evaluator in enumerate(declaration.evaluators)
@@ -551,25 +598,33 @@ def _validate_placement_overrides(declaration: PaaTaskDeclaration, path: Path) -
             ]
             if not matches:
                 raise PaaDeclarationError(
-                    f"{path}: {where} selector matches no declared evaluator"
+                    f"{path}: {where} selector matches no declared evaluator",
+                    code="placement.override_matches_no_evaluator",
+                    pointer=f"{at}/selector",
                 )
             if len(matches) > 1:
                 raise PaaDeclarationError(
                     f"{path}: {where} selector matches {len(matches)} declared "
-                    "evaluators; add 'version' to disambiguate"
+                    "evaluators; add 'version' to disambiguate",
+                    code="placement.override_ambiguous",
+                    pointer=f"{at}/selector",
                 )
 
             claimant = claimed_by.setdefault(matches[0], index)
             if claimant != index:
                 raise PaaDeclarationError(
                     f"{path}: {where} selector selects the evaluator already "
-                    f"overridden at {position} by overrides/{claimant}"
+                    f"overridden at {position} by overrides/{claimant}",
+                    code="placement.override_duplicate",
+                    pointer=f"{at}/selector",
                 )
 
             if override.placement == placement.default:
                 raise PaaDeclarationError(
                     f"{path}: {where} placement {override.placement!r} equals the "
-                    f"{position} default; remove the override or change its placement"
+                    f"{position} default; remove the override or change its placement",
+                    code="placement.override_redundant",
+                    pointer=f"{at}/placement",
                 )
 
 
@@ -587,7 +642,9 @@ def _validate_semantics(declaration: PaaTaskDeclaration, path: Path) -> None:
     if declaration.initial_position not in policy:
         raise PaaDeclarationError(
             f"{path}: initial_position {declaration.initial_position!r} is not "
-            f"declared in position_policy (declared: {declared})"
+            f"declared in position_policy (declared: {declared})",
+            code="initial_position.not_in_policy",
+            pointer="/initial_position",
         )
 
     transitions = (
@@ -597,13 +654,22 @@ def _validate_semantics(declaration: PaaTaskDeclaration, path: Path) -> None:
     for name, from_position, to_position in transitions:
         if from_position == to_position:
             raise PaaDeclarationError(
-                f"{path}: {name}.from and {name}.to are both {from_position!r}"
+                f"{path}: {name}.from and {name}.to are both {from_position!r}",
+                code="transition.same_position",
+                # The transition, not either edge: neither one is wrong on
+                # its own, and the contract points at the pair.
+                pointer=f"/{name}",
             )
         for edge, position in (("from", from_position), ("to", to_position)):
             if position not in policy:
                 raise PaaDeclarationError(
                     f"{path}: {name}.{edge} {position!r} is not declared in "
-                    f"position_policy (declared: {declared})"
+                    f"position_policy (declared: {declared})",
+                    code="transition.position_not_in_policy",
+                    # The document's key, not the dataclass field: these
+                    # are `from`/`to` on the wire and `from_position`/
+                    # `to_position` only after loading.
+                    pointer=f"/{name}/{edge}",
                 )
 
     _validate_placement_overrides(declaration, path)
@@ -707,6 +773,7 @@ def get_paa_declaration(
 
 
 __all__ = [
+    "PAA_DECLARATION_CODES",
     "AutonomyPosition",
     "Deployment",
     "PaaDeclarationError",

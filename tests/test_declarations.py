@@ -20,6 +20,7 @@ Scout's repository.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,7 @@ import yaml
 
 import paa_runtime.declarations as paa_declarations
 from paa_runtime.declarations import (
+    PAA_DECLARATION_CODES,
     PaaDeclarationError,
     PaaEvaluationBasis,
     ProducerRegistration,
@@ -755,3 +757,60 @@ class TestPlacementOverrides:
         _write_declaration(tmp_path, self._with_hotl_overrides([]))
         with pytest.raises(PaaDeclarationError, match="'overrides' must be a non-empty list"):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+
+class TestErrorCodeVocabulary:
+    """No raise site may name a rule outside the published vocabulary.
+
+    The conformance suite proves the constant matches the contract, and
+    that every entry in it is emitted by something real. Neither can see
+    a raise site that names a rule the constant never heard of: with no
+    case targeting it, there is nothing to run that would notice.
+
+    Reading the raise sites directly is what covers that. ``ast`` rather
+    than a regex because a code split across concatenated lines is still
+    a literal to the parser and not to a pattern, and reading beats
+    importing here — the point is to see what the source *says*, not what
+    one execution path happens to produce.
+    """
+
+    @staticmethod
+    def _declared_codes() -> set[str]:
+        source = Path(paa_declarations.__file__).read_text(encoding="utf-8")
+        return {
+            keyword.value.value
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "PaaDeclarationError"
+            for keyword in node.keywords
+            if keyword.arg == "code" and isinstance(keyword.value, ast.Constant)
+        }
+
+    def test_every_raise_site_code_is_in_the_published_vocabulary(self) -> None:
+        assert self._declared_codes() <= PAA_DECLARATION_CODES
+
+    def test_the_raise_sites_were_actually_found(self) -> None:
+        # Guards the subset check above, which an empty set satisfies —
+        # exactly what a rename of the exception class would produce.
+        assert self._declared_codes() == PAA_DECLARATION_CODES
+
+    def test_a_structural_guard_carries_no_code_or_pointer(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, {"task": "t", "version": 1})
+        with pytest.raises(PaaDeclarationError) as raised:
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+        assert raised.value.code is None
+        assert raised.value.pointer is None
+
+    def test_a_semantic_failure_carries_both(self, tmp_path: Path) -> None:
+        declaration = dict(_CASES_TASK)
+        policy = dict(_FIXED_POSITION_POLICY)
+        del policy["autonomous"]
+        declaration["initial_position"] = "autonomous"
+        declaration["position_policy"] = policy
+        _write_declaration(tmp_path, declaration)
+
+        with pytest.raises(PaaDeclarationError) as raised:
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+        assert raised.value.code == "initial_position.not_in_policy"
+        assert raised.value.pointer == "/initial_position"

@@ -112,9 +112,11 @@ jobs:
         run: uv run pytest conformance
 
       - name: Contract package tests
-        # Includes registry parity: the Python contract list and the JS one in
-        # scripts/lib/ are two lists serving two languages, and this is what
-        # stops them diverging silently.
+        # Includes registry coverage: SCHEMA_IDS against the schemas actually
+        # on disk, and the build hook against the directories the accessors
+        # read. Both catch a contract added to the corpus and forgotten in a
+        # list — which the cross-repo parity check this replaced could not,
+        # since two lists forgetting it equally agreed with each other.
         run: uv run --package paa-contracts pytest packages/paa-contracts/tests
 
       - name: Prove the contract wheel carries the artifacts verbatim

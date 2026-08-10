@@ -50,8 +50,16 @@ Repository = "https://github.com/RankOneLabs/paa"
 # Still test-only. Nothing in paa_runtime loads a JSON schema at runtime —
 # declarations.py explicitly declines to re-implement the external schema — so
 # a production install pulls neither of these.
+#
+# The `format-nongpl` extra is load-bearing, not decoration. JSON Schema
+# makes `format` an annotation by default, and jsonschema only asserts it
+# when a FormatChecker is supplied *and* the per-format validators are
+# installed — without them a FormatChecker silently checks nothing, and
+# the three published cases that mutate a date-time into "not-a-date"
+# pass validation. `nongpl` rather than `format`: the latter pulls
+# rfc3987, which is GPL, and this repo is MIT.
 conformance = [
-    "jsonschema>=4.23",
+    "jsonschema[format-nongpl]>=4.23",
     "paa-contracts",
 ]
 

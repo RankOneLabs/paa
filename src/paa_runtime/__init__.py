@@ -35,6 +35,7 @@ from __future__ import annotations
 
 from paa_runtime.config import RuntimeConfig
 from paa_runtime.declarations import (
+    PAA_DECLARATION_CODES,
     AutonomyPosition,
     Deployment,
     PaaDeclarationError,
@@ -159,6 +160,7 @@ __all__ = [
     "new_event_id",
     "new_created_at",
     # Errors
+    "PAA_DECLARATION_CODES",
     "PaaDeclarationError",
     "EvidenceError",
     "PaaServiceError",
