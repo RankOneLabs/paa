@@ -96,9 +96,9 @@ class PaaDeclarationError(ValueError):
     ``None`` for the structural guards above, whose rules belong to the
     schema.
 
-    They are additive. ``str(exc)`` is unchanged and remains the operator
-    -facing message — the CLI prints it and nothing else, so a caller that
-    predates this reads exactly what it did before.
+    They are additive. ``str(exc)`` is unchanged and remains the
+    operator-facing message — the CLI prints it and nothing else, so a
+    caller that predates this reads exactly what it did before.
     """
 
     def __init__(
