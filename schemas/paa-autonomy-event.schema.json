@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paa.dev/paa-autonomy-event.schema.json",
+  "title": "PAA Autonomy Event",
+  "description": "One row of the append-only autonomy event stream: a motion proposal, its resolution, or the position change it authorized.",
+  "x-paa-schema-version": "paa-autonomy-event/0.1.0-draft",
+  "type": "object",
+  "required": [
+    "event_schema",
+    "id",
+    "motion_id",
+    "task",
+    "declaration_version",
+    "scope",
+    "event",
+    "from_position",
+    "to_position",
+    "evidence_ref",
+    "evidence_sha256",
+    "actor",
+    "reason",
+    "created_at"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "autonomy_position": {
+      "type": "string",
+      "enum": ["manual", "hitl", "hotl", "autonomous"]
+    }
+  },
+  "properties": {
+    "event_schema": {
+      "type": "string",
+      "const": "paa-autonomy-event/0.1.0-draft"
+    },
+    "id": {
+      "type": "string",
+      "description": "This row's own identity.",
+      "minLength": 1
+    },
+    "motion_id": {
+      "type": "string",
+      "description": "Groups the 1-3 events belonging to one proposal-through-resolution motion.",
+      "minLength": 1
+    },
+    "task": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 1
+    },
+    "declaration_version": { "type": "integer", "minimum": 1 },
+    "scope": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "event": {
+      "type": "string",
+      "enum": ["motion_proposed", "motion_approved", "motion_rejected", "position_changed"]
+    },
+    "from_position": { "$ref": "#/definitions/autonomy_position" },
+    "to_position": { "$ref": "#/definitions/autonomy_position" },
+    "evidence_ref": {
+      "type": "string",
+      "description": "Stable reference to the immutable decision-artifact or motion evidence bytes this event is bound to.",
+      "minLength": 1
+    },
+    "evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "actor": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

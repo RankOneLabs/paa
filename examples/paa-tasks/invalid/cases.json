@@ -1,0 +1,1170 @@
+[
+  {
+    "id": "old_single_evaluator",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "copy",
+        "from": "/evaluators/0",
+        "path": "/evaluator"
+      },
+      {
+        "kind": "remove",
+        "path": "/evaluators"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "",
+      "params": {
+        "additionalProperty": "evaluator"
+      }
+    }
+  },
+  {
+    "id": "empty_evaluators",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators",
+        "value": []
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minItems",
+      "path": "/evaluators"
+    }
+  },
+  {
+    "id": "unknown_evaluator_authority",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/authority",
+        "value": "veto"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/evaluators/0/authority"
+    }
+  },
+  {
+    "id": "unknown_evaluator_target",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/target",
+        "value": "system"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/evaluators/0/target"
+    }
+  },
+  {
+    "id": "missing_declaration_version",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/version"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "",
+      "params": {
+        "missingProperty": "version"
+      }
+    }
+  },
+  {
+    "id": "declaration_version_zero",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/version",
+        "value": 0
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/version"
+    }
+  },
+  {
+    "id": "unknown_autonomy_position",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/initial_position",
+        "value": "assisted"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/initial_position"
+    }
+  },
+  {
+    "id": "unknown_deployment_mode",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/deployment",
+        "value": "paused"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/deployment"
+    }
+  },
+  {
+    "id": "unknown_position_policy_value",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hitl",
+        "value": "review"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/position_policy/hitl"
+    }
+  },
+  {
+    "id": "cases_window_with_string_size",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/window/size",
+        "value": "50"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/promotion/window/size"
+    }
+  },
+  {
+    "id": "duration_window_with_integer_size",
+    "base": "inbound_reply_surfacing.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/window/size",
+        "value": 14
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/promotion/window/size"
+    }
+  },
+  {
+    "id": "case_window_size_zero",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/window/size",
+        "value": 0
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/promotion/window/size"
+    }
+  },
+  {
+    "id": "case_window_size_negative",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/window/size",
+        "value": -1
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/promotion/window/size"
+    }
+  },
+  {
+    "id": "promotion_without_execution",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/promotion/execution"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/promotion",
+      "params": {
+        "missingProperty": "execution"
+      }
+    }
+  },
+  {
+    "id": "demotion_without_trigger",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/demotion/trigger"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/demotion",
+      "params": {
+        "missingProperty": "trigger"
+      }
+    }
+  },
+  {
+    "id": "unknown_top_level_field",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/owner",
+        "value": "ops"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "",
+      "params": {
+        "additionalProperty": "owner"
+      }
+    }
+  },
+  {
+    "id": "obsolete_evidence_log",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evidence_log",
+        "value": [
+          "verdict"
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "",
+      "params": {
+        "additionalProperty": "evidence_log"
+      }
+    }
+  },
+  {
+    "id": "unknown_technique",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/technique",
+        "value": "free-form"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/evaluators/0/technique"
+    }
+  },
+  {
+    "id": "unknown_epistemic_status",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/epistemic_status",
+        "value": "reference"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/evaluators/0/epistemic_status"
+    }
+  },
+  {
+    "id": "unknown_evaluation_basis_kind",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/evaluation_basis/kind",
+        "value": "vibes"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/evaluators/0/evaluation_basis/kind"
+    }
+  },
+  {
+    "id": "evaluation_basis_missing_ref",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/evaluators/0/evaluation_basis/ref"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/evaluators/0/evaluation_basis",
+      "params": {
+        "missingProperty": "ref"
+      }
+    }
+  },
+  {
+    "id": "missing_deployment",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/deployment"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "",
+      "params": {
+        "missingProperty": "deployment"
+      }
+    }
+  },
+  {
+    "id": "duplicate_evaluator_identity",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "copy",
+        "from": "/evaluators/0",
+        "path": "/evaluators/-"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "uniqueItems",
+      "path": "/evaluators"
+    }
+  },
+  {
+    "id": "evaluator_forbidden_placement_field",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/placement",
+        "value": "blocking"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/evaluators/0",
+      "params": {
+        "additionalProperty": "placement"
+      }
+    }
+  },
+  {
+    "id": "evaluator_forbidden_position_field",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/position",
+        "value": "hitl"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/evaluators/0",
+      "params": {
+        "additionalProperty": "position"
+      }
+    }
+  },
+  {
+    "id": "root_forbidden_evidence_ref",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evidence_ref",
+        "value": "evidence/paa/deadbeef/evidence.json"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "",
+      "params": {
+        "additionalProperty": "evidence_ref"
+      }
+    }
+  },
+  {
+    "id": "promotion_forbidden_evidence_sha256",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/evidence_sha256",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/promotion",
+      "params": {
+        "additionalProperty": "evidence_sha256"
+      }
+    }
+  },
+  {
+    "id": "demotion_forbidden_evidence_ref",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/demotion/evidence_ref",
+        "value": "evidence/paa/deadbeef/evidence.json"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/demotion",
+      "params": {
+        "additionalProperty": "evidence_ref"
+      }
+    }
+  },
+  {
+    "id": "evaluator_forbidden_evidence_sha256",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/evidence_sha256",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/evaluators/0",
+      "params": {
+        "additionalProperty": "evidence_sha256"
+      }
+    }
+  },
+  {
+    "id": "initial_position_missing_from_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/initial_position",
+        "value": "autonomous"
+      },
+      {
+        "kind": "remove",
+        "path": "/position_policy/autonomous"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "initial_position.not_in_policy",
+      "path": "/initial_position"
+    }
+  },
+  {
+    "id": "promotion_from_missing_from_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/from",
+        "value": "manual"
+      },
+      {
+        "kind": "remove",
+        "path": "/position_policy/manual"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "transition.position_not_in_policy",
+      "path": "/promotion/from"
+    }
+  },
+  {
+    "id": "promotion_to_missing_from_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/to",
+        "value": "autonomous"
+      },
+      {
+        "kind": "remove",
+        "path": "/position_policy/autonomous"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "transition.position_not_in_policy",
+      "path": "/promotion/to"
+    }
+  },
+  {
+    "id": "demotion_from_missing_from_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/demotion/from",
+        "value": "autonomous"
+      },
+      {
+        "kind": "remove",
+        "path": "/position_policy/autonomous"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "transition.position_not_in_policy",
+      "path": "/demotion/from"
+    }
+  },
+  {
+    "id": "demotion_to_missing_from_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/demotion/to",
+        "value": "manual"
+      },
+      {
+        "kind": "remove",
+        "path": "/position_policy/manual"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "transition.position_not_in_policy",
+      "path": "/demotion/to"
+    }
+  },
+  {
+    "id": "promotion_identical_positions",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/to",
+        "value": "hitl"
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "transition.same_position",
+      "path": "/promotion"
+    }
+  },
+  {
+    "id": "missing_task",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/task"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "",
+      "params": {
+        "missingProperty": "task"
+      }
+    }
+  },
+  {
+    "id": "invalid_task_pattern",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/task",
+        "value": "Refund-Approval"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "pattern",
+      "path": "/task"
+    }
+  },
+  {
+    "id": "empty_description",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/description",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/description"
+    }
+  },
+  {
+    "id": "missing_boundary_input",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/boundary/input"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/boundary",
+      "params": {
+        "missingProperty": "input"
+      }
+    }
+  },
+  {
+    "id": "missing_boundary_output",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/boundary/output"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/boundary",
+      "params": {
+        "missingProperty": "output"
+      }
+    }
+  },
+  {
+    "id": "evaluator_missing_target",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/evaluators/0/target"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/evaluators/0",
+      "params": {
+        "missingProperty": "target"
+      }
+    }
+  },
+  {
+    "id": "empty_position_policy",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy",
+        "value": {}
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minProperties",
+      "path": "/position_policy"
+    }
+  },
+  {
+    "id": "invalid_promotion_execution",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/execution",
+        "value": "threshold_only"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/promotion/execution"
+    }
+  },
+  {
+    "id": "outbound_wrong_deployment",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/deployment",
+        "value": "shadow"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.deployment_mismatch",
+      "path": "/deployment"
+    }
+  },
+  {
+    "id": "outbound_author_rate_forbidden",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "copy",
+        "from": "/evaluators/0",
+        "path": "/evaluators/-"
+      },
+      {
+        "kind": "set",
+        "path": "/evaluators/4/property",
+        "value": "author_rate"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.forbidden_evaluator",
+      "path": "/evaluators/4/property"
+    }
+  },
+  {
+    "id": "outbound_invariants_wrong_target",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/target",
+        "value": "process"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/0/target"
+    }
+  },
+  {
+    "id": "outbound_invariants_wrong_technique",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/technique",
+        "value": "human"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/0/technique"
+    }
+  },
+  {
+    "id": "outbound_invariants_wrong_epistemic_status",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/0/epistemic_status",
+        "value": "proxy"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/0/epistemic_status"
+    }
+  },
+  {
+    "id": "outbound_publish_authorization_missing",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": "async"
+      },
+      {
+        "kind": "remove",
+        "path": "/evaluators/2"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_missing",
+      "path": "/evaluators"
+    }
+  },
+  {
+    "id": "outbound_publish_authorization_wrong_target",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/2/target",
+        "value": "output"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/2/target"
+    }
+  },
+  {
+    "id": "outbound_publish_quality_not_advisory",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/3/authority",
+        "value": "blocking"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/3/authority"
+    }
+  },
+  {
+    "id": "outbound_publish_quality_wrong_target",
+    "base": "outbound_content_publish.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/3/target",
+        "value": "output"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/3/target"
+    }
+  },
+  {
+    "id": "inbound_wrong_deployment",
+    "base": "inbound_reply_surfacing.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/deployment",
+        "value": "active"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.deployment_mismatch",
+      "path": "/deployment"
+    }
+  },
+  {
+    "id": "inbound_human_quality_not_advisory",
+    "base": "inbound_reply_surfacing.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/3/authority",
+        "value": "blocking"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/3/authority"
+    }
+  },
+  {
+    "id": "inbound_human_quality_wrong_epistemic_status",
+    "base": "inbound_reply_surfacing.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/3/epistemic_status",
+        "value": "proxy"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_field_mismatch",
+      "path": "/evaluators/3/epistemic_status"
+    }
+  },
+  {
+    "id": "inbound_human_quality_wrong_version",
+    "base": "inbound_reply_surfacing.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/evaluators/3/version",
+        "value": "3"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.evaluator_missing",
+      "path": "/evaluators"
+    }
+  },
+  {
+    "id": "canonical_wrong_deployment",
+    "base": "canonical_promotion.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/deployment",
+        "value": "active"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.deployment_mismatch",
+      "path": "/deployment"
+    }
+  },
+  {
+    "id": "pinned_promotion_not_operator_approved",
+    "base": "canonical_promotion.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/promotion/execution",
+        "value": "automatic"
+      }
+    ],
+    "expected": {
+      "stage": "pinned",
+      "code": "pinned.promotion_execution_mismatch",
+      "path": "/promotion/execution"
+    }
+  },
+  {
+    "id": "placement_override_matches_no_evaluator",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": {
+          "default": "blocking",
+          "overrides": [
+            {
+              "selector": {
+                "property": "not_a_declared_property",
+                "technique": "human"
+              },
+              "placement": "async"
+            }
+          ]
+        }
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "placement.override_matches_no_evaluator",
+      "path": "/position_policy/hotl/overrides/0/selector"
+    }
+  },
+  {
+    "id": "placement_override_ambiguous",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "copy",
+        "from": "/evaluators/0",
+        "path": "/evaluators/2"
+      },
+      {
+        "kind": "set",
+        "path": "/evaluators/2/version",
+        "value": "2"
+      },
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": {
+          "default": "blocking",
+          "overrides": [
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic"
+              },
+              "placement": "async"
+            }
+          ]
+        }
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "placement.override_ambiguous",
+      "path": "/position_policy/hotl/overrides/0/selector"
+    }
+  },
+  {
+    "id": "placement_override_duplicate",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": {
+          "default": "blocking",
+          "overrides": [
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic"
+              },
+              "placement": "async"
+            },
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic"
+              },
+              "placement": "offline"
+            }
+          ]
+        }
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "placement.override_duplicate",
+      "path": "/position_policy/hotl/overrides/1/selector"
+    }
+  },
+  {
+    "id": "placement_override_duplicate_selector_alias",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": {
+          "default": "blocking",
+          "overrides": [
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic"
+              },
+              "placement": "async"
+            },
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic",
+                "version": "1"
+              },
+              "placement": "offline"
+            }
+          ]
+        }
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "placement.override_duplicate",
+      "path": "/position_policy/hotl/overrides/1/selector"
+    }
+  },
+  {
+    "id": "placement_override_redundant",
+    "base": "refund_approval.v1.yaml",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/position_policy/hotl",
+        "value": {
+          "default": "blocking",
+          "overrides": [
+            {
+              "selector": {
+                "property": "refund_policy_invariants",
+                "technique": "deterministic"
+              },
+              "placement": "blocking"
+            }
+          ]
+        }
+      }
+    ],
+    "expected": {
+      "stage": "semantic",
+      "code": "placement.override_redundant",
+      "path": "/position_policy/hotl/overrides/0/placement"
+    }
+  }
+]

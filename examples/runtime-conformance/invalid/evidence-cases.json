@@ -1,0 +1,63 @@
+[
+  {
+    "id": "evidence_missing_producer",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "remove", "path": "/producer" }],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "",
+      "params": { "missingProperty": "producer" }
+    }
+  },
+  {
+    "id": "evidence_invalid_started_at",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/timestamps/started_at", "value": "not-a-date" }],
+    "expected": {
+      "stage": "structural",
+      "code": "format",
+      "path": "/timestamps/started_at"
+    }
+  },
+  {
+    "id": "evidence_invalid_task_identifier",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/task", "value": "Inbound Reply" }],
+    "expected": {
+      "stage": "structural",
+      "code": "pattern",
+      "path": "/task"
+    }
+  },
+  {
+    "id": "evidence_undeclared_scope",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/scope", "value": "publish:bluesky" }],
+    "expected": {
+      "stage": "evidence_semantic",
+      "code": "evidence.undeclared_scope",
+      "path": "/scope"
+    }
+  },
+  {
+    "id": "evidence_unregistered_declaration_version",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/declaration_version", "value": 99 }],
+    "expected": {
+      "stage": "evidence_semantic",
+      "code": "evidence.unregistered_declaration_version",
+      "path": "/declaration_version"
+    }
+  },
+  {
+    "id": "evidence_evaluator_identity_mismatch",
+    "base": "evidence/paa/cd85082f0ef66db18183acd3e350668078d31cbb6ff68683a9efcb552157662c/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/evaluator/version", "value": "99" }],
+    "expected": {
+      "stage": "evidence_semantic",
+      "code": "evidence.evaluator_identity_mismatch",
+      "path": "/evaluator"
+    }
+  }
+]

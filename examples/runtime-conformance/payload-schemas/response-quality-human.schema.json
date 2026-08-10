@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paa.dev/payload-schemas/response-quality-human.schema.json",
+  "title": "response_quality evidence payload — human grader",
+  "description": "Narrows paa-evidence-record for inbound_reply_surfacing's response_quality property as produced by the human/human_gold/ground_truth evaluator.",
+  "allOf": [
+    { "$ref": "https://paa.dev/paa-evidence-record.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": "object",
+          "properties": {
+            "value": { "type": "string", "enum": ["approve", "revise", "reject"] }
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": ["reviewer", "relevance_judgment", "schema_version"],
+          "additionalProperties": false,
+          "properties": {
+            "reviewer": { "type": "string", "minLength": 1 },
+            "relevance_judgment": {
+              "type": "string",
+              "enum": ["correct", "false_positive", "false_negative"]
+            },
+            "schema_version": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    }
+  ]
+}

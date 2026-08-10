@@ -1,0 +1,50 @@
+[
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-outbound-bluesky-001-proposed",
+    "motion_id": "motion-outbound-bluesky-001",
+    "task": "outbound_content_publish",
+    "declaration_version": 1,
+    "scope": "publish:bluesky",
+    "event": "motion_proposed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c/evidence.json",
+    "evidence_sha256": "fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c",
+    "actor": "operator:carol",
+    "reason": "outbound_publish_promotion_report window closed eligible for publish:bluesky",
+    "created_at": "2026-03-01T10:00:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-outbound-bluesky-001-approved",
+    "motion_id": "motion-outbound-bluesky-001",
+    "task": "outbound_content_publish",
+    "declaration_version": 1,
+    "scope": "publish:bluesky",
+    "event": "motion_approved",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c/evidence.json",
+    "evidence_sha256": "fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c",
+    "actor": "operator:carol",
+    "reason": "approved — publish:farcaster remains hitl pending its own window",
+    "created_at": "2026-03-01T10:20:00.000Z"
+  },
+  {
+    "event_schema": "paa-autonomy-event/0.1.0-draft",
+    "id": "evt-outbound-bluesky-001-changed",
+    "motion_id": "motion-outbound-bluesky-001",
+    "task": "outbound_content_publish",
+    "declaration_version": 1,
+    "scope": "publish:bluesky",
+    "event": "position_changed",
+    "from_position": "hitl",
+    "to_position": "hotl",
+    "evidence_ref": "evidence/paa/fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c/evidence.json",
+    "evidence_sha256": "fbe8a8d7556e0c8f957922b8db1c64ed1aa9a1a3a86d4b751cee7ad2ae2ba51c",
+    "actor": "operator:carol",
+    "reason": "approved — publish:farcaster remains hitl pending its own window",
+    "created_at": "2026-03-01T10:20:00.000Z"
+  }
+]

@@ -103,7 +103,7 @@ The trade-off is named rather than hidden. With the default store, a consumer th
 ```bash
 uv sync
 uv run pytest
-uv run ruff check src tests conformance
+uv run ruff check src tests conformance packages
 uv run mypy src/paa_runtime
 ```
 
@@ -114,12 +114,12 @@ than fixtures of its own, so that "passes the published conformance suite" is
 a claim about the contract and not about this repo's idea of it.
 
 Those artifacts come from `paa-contracts` — the four normative schemas, the
-positive fixture corpus, and the invalid-case tables, released from the paa.dev
-repo. **It is not on PyPI yet, so today it takes two commands, not one:**
+positive fixture corpus, and the invalid-case tables. It is the other package
+this repo publishes, and a workspace member here, so the extra is all it takes:
 
 ```bash
-uv sync --extra conformance                                             # jsonschema
-uv run --with ../paadotdev/packages/paa-contracts pytest conformance    # the artifacts
+uv sync --extra conformance
+uv run pytest conformance
 ```
 
 The `conformance` path is required, not decoration. `testpaths` is `tests`, so
@@ -164,18 +164,16 @@ artifact first. Its event stream reproduces the published one in every field
 except `evidence_ref` and `evidence_sha256`, and the suite asserts exactly that
 rather than skipping the fixture.
 
-The extra deliberately does not name `paa-contracts`. An unresolvable
-requirement cannot be locked, and pinning it to a local path breaks plain
-`uv sync` for anyone without a site checkout next door — uv resolves metadata
-for every locked entry regardless of which extras are requested. The `--with`
-form also builds and installs a real wheel, so it exercises the packaged data
-path a release uses rather than a source-tree shortcut.
-
-On publication `paa-contracts` joins the extra and the second command goes
-away.
-
 Both are **test-only**. Nothing in `paa_runtime` loads a JSON schema at
-runtime, and a production install pulls neither.
+runtime, and a production install pulls neither — `uv sync` without the extra
+resolves no `paa_contracts` at all.
+
+Because a workspace member installs editable, that command resolves the
+artifacts from the working tree rather than from packaged wheel data, which
+`pytest conformance` reports in its header. CI covers the other path
+separately: it builds the wheel and checks the artifacts inside it against the
+tree byte for byte, since the suite passing says nothing about whether a
+release would carry the corpus.
 
 ## Status
 

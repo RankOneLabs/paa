@@ -1,0 +1,239 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paa.dev/paa-task.schema.json",
+  "title": "PAA Task Declaration",
+  "description": "Machine-checkable autonomy declaration for a Progressive Autonomy Architecture task.",
+  "x-paa-schema-version": "paa-task/0.2.1-draft",
+  "type": "object",
+  "required": [
+    "task",
+    "version",
+    "description",
+    "boundary",
+    "initial_position",
+    "deployment",
+    "evaluators",
+    "position_policy",
+    "promotion",
+    "demotion"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "autonomy_position": {
+      "type": "string",
+      "enum": ["manual", "hitl", "hotl", "autonomous"]
+    },
+    "deployment": {
+      "type": "string",
+      "enum": ["active", "shadow", "disabled"]
+    },
+    "evaluator_target": {
+      "type": "string",
+      "enum": ["input", "process", "output", "outcome"]
+    },
+    "technique": {
+      "type": "string",
+      "enum": ["deterministic", "classifier", "llm_judge", "human"]
+    },
+    "evaluation_basis": {
+      "type": "object",
+      "description": "The criteria and procedure that ground an evaluator's verdict.",
+      "required": ["kind", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["invariant", "reference_label", "rubric", "human_gold", "downstream_result"]
+        },
+        "ref": {
+          "type": "string",
+          "description": "Name of the concrete invariant set, rubric, label set, human-gold protocol, or downstream measure.",
+          "minLength": 1
+        }
+      }
+    },
+    "epistemic_status": {
+      "type": "string",
+      "description": "Whether governance designates an evaluator's verdict as the task's authoritative truth signal or treats it as an approximation. ground_truth is a governance designation, not a claim of infallibility.",
+      "enum": ["proxy", "ground_truth"]
+    },
+    "authority": {
+      "type": "string",
+      "enum": ["advisory", "blocking"]
+    },
+    "position_policy_value": {
+      "type": "string",
+      "enum": ["blocking", "async", "offline"]
+    },
+    "evaluator_selector": {
+      "type": "object",
+      "description": "Selects exactly one declared evaluator by a subset of its declared identity.",
+      "required": ["property", "technique"],
+      "additionalProperties": false,
+      "properties": {
+        "property": { "type": "string", "minLength": 1 },
+        "technique": { "$ref": "#/definitions/technique" },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "position_placement": {
+      "description": "Placement at one autonomy position: a single value applying to every declared evaluator, or a default with explicit per-evaluator overrides.",
+      "oneOf": [
+        { "$ref": "#/definitions/position_policy_value" },
+        {
+          "type": "object",
+          "required": ["default", "overrides"],
+          "additionalProperties": false,
+          "properties": {
+            "default": { "$ref": "#/definitions/position_policy_value" },
+            "overrides": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["selector", "placement"],
+                "additionalProperties": false,
+                "properties": {
+                  "selector": { "$ref": "#/definitions/evaluator_selector" },
+                  "placement": { "$ref": "#/definitions/position_policy_value" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "window": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "size"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string", "enum": ["cases"] },
+            "size": { "type": "integer", "minimum": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "size"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string", "enum": ["duration"] },
+            "size": { "type": "string", "pattern": "^P(?!$).+$" }
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "task": {
+      "type": "string",
+      "description": "Stable task identifier.",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "version": {
+      "type": "integer",
+      "description": "Declaration version. A new version creates a new position and evidence partition; state and promotion evidence do not carry forward implicitly.",
+      "minimum": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Bounded task and governed effect.",
+      "minLength": 1
+    },
+    "boundary": {
+      "type": "object",
+      "description": "Typed input and output that define the observable unit.",
+      "required": ["input", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "input": { "type": "string", "minLength": 1 },
+        "output": { "type": "string", "minLength": 1 }
+      }
+    },
+    "initial_position": {
+      "allOf": [{ "$ref": "#/definitions/autonomy_position" }],
+      "description": "Position before any position_changed event exists, applied independently to every declared scope."
+    },
+    "deployment": {
+      "allOf": [{ "$ref": "#/definitions/deployment" }],
+      "description": "Deployment mode for this declaration."
+    },
+    "scopes": {
+      "type": "array",
+      "description": "Declared runtime scopes for this task. When absent, runtime scope is null.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "evaluators": {
+      "type": "array",
+      "description": "Declared evaluator list.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": [
+          "property",
+          "target",
+          "technique",
+          "evaluation_basis",
+          "epistemic_status",
+          "version",
+          "authority"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "property": { "type": "string", "minLength": 1 },
+          "target": { "$ref": "#/definitions/evaluator_target" },
+          "technique": { "$ref": "#/definitions/technique" },
+          "evaluation_basis": { "$ref": "#/definitions/evaluation_basis" },
+          "epistemic_status": { "$ref": "#/definitions/epistemic_status" },
+          "version": { "type": "string", "minLength": 1 },
+          "authority": { "$ref": "#/definitions/authority" }
+        }
+      }
+    },
+    "position_policy": {
+      "type": "object",
+      "description": "Gate behavior at supported autonomy positions.",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "manual": { "$ref": "#/definitions/position_placement" },
+        "hitl": { "$ref": "#/definitions/position_placement" },
+        "hotl": { "$ref": "#/definitions/position_placement" },
+        "autonomous": { "$ref": "#/definitions/position_placement" }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "description": "The single promotion edge governed by this declaration version: its source position, target position, evidence requirement, and execution mode.",
+      "required": ["from", "to", "report", "window", "execution"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/definitions/autonomy_position" },
+        "to": { "$ref": "#/definitions/autonomy_position" },
+        "report": { "type": "string", "minLength": 1 },
+        "window": { "$ref": "#/definitions/window" },
+        "execution": {
+          "type": "string",
+          "enum": ["operator_approval", "automatic"]
+        }
+      }
+    },
+    "demotion": {
+      "type": "object",
+      "description": "The single demotion edge governed by this declaration version: its source position, return position, trigger, and observation window.",
+      "required": ["from", "to", "trigger", "window"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/definitions/autonomy_position" },
+        "to": { "$ref": "#/definitions/autonomy_position" },
+        "trigger": { "type": "string", "minLength": 1 },
+        "window": { "$ref": "#/definitions/window" }
+      }
+    }
+  }
+}
