@@ -9,13 +9,34 @@ dependencies = [
 
 [project.optional-dependencies]
 # Conformance runs against the published contract artifacts. paa-contracts
-# (schemas + fixtures + invalid-case tables, released from the paa.dev repo)
-# is added here once it ships — see spec 1.5. Nothing in paa_runtime loads a
-# JSON schema at runtime, so this stays test-only and never enters a
-# production install.
+# carries the schemas, the positive fixture corpus, and the invalid-case
+# tables, released from the paa.dev repo. Nothing in paa_runtime loads a JSON
+# schema at runtime — declarations.py explicitly declines to re-implement the
+# external schema — so this stays test-only and never enters a production
+# install.
 conformance = [
     "jsonschema>=4.23",
 ]
+
+# paa-contracts is missing from that list on purpose, and it is the other half
+# of what conformance needs — the schemas, the positive fixture corpus, and
+# the invalid-case tables.
+#
+# It is not on PyPI yet, and an unresolvable requirement cannot be locked. A
+# [tool.uv.sources] path entry to a sibling site checkout does lock, but uv
+# resolves metadata for every locked entry regardless of which extras are
+# requested, so plain `uv sync` then fails for anyone who does not happen to
+# have the site repo next door. Breaking the base install of a package whose
+# whole pitch is that it installs anywhere is a far worse trade than an extra
+# that is briefly incomplete.
+#
+# Until it ships, bring it in per-command — this builds and installs a real
+# wheel, so it exercises the packaged data path the release actually uses:
+#
+#     uv run --with ../paadotdev/packages/paa-contracts pytest
+#
+# On publication it joins the list above as `paa-contracts>=0.1.0` and this
+# comment goes away.
 
 [build-system]
 requires = ["hatchling"]
