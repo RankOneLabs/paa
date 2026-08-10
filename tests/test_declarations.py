@@ -28,6 +28,7 @@ import yaml
 import paa_runtime.declarations as paa_declarations
 from paa_runtime.declarations import (
     PaaDeclarationError,
+    PaaEvaluationBasis,
     ProducerRegistration,
     get_paa_declaration,
     load_paa_declarations,
@@ -36,19 +37,35 @@ from paa_runtime.declarations import (
 _REGISTRY: tuple[ProducerRegistration, ...] = (
     ProducerRegistration(
         property="content_invariants", target="output", technique="deterministic",
-        oracle="invariant", version="1", authority="blocking", status="implemented",
+        evaluation_basis=PaaEvaluationBasis(kind="invariant", ref="content_invariants"),
+        epistemic_status="ground_truth",
+        version="1", authority="blocking", status="implemented",
     ),
     ProducerRegistration(
         property="draft_quality", target="output", technique="llm_judge",
-        oracle="proxy", version="1", authority="advisory", status="future",
+        evaluation_basis=PaaEvaluationBasis(kind="rubric", ref="draft_quality"),
+        epistemic_status="proxy",
+        version="1", authority="advisory", status="future",
+    ),
+    # A second version of the same evaluator identity, so a versionless
+    # selector has something to be ambiguous *between*.
+    ProducerRegistration(
+        property="draft_quality", target="output", technique="llm_judge",
+        evaluation_basis=PaaEvaluationBasis(kind="rubric", ref="draft_quality"),
+        epistemic_status="proxy",
+        version="2", authority="advisory", status="future",
     ),
     ProducerRegistration(
         property="publish_authorization", target="process", technique="human",
-        oracle="human_gold", version="1", authority="blocking", status="implemented",
+        evaluation_basis=PaaEvaluationBasis(kind="human_gold", ref="publish_authorization"),
+        epistemic_status="ground_truth",
+        version="1", authority="blocking", status="implemented",
     ),
     ProducerRegistration(
         property="canonical_truth", target="output", technique="human",
-        oracle="human_gold", version="1", authority="blocking", status="future",
+        evaluation_basis=PaaEvaluationBasis(kind="human_gold", ref="canonical_truth"),
+        epistemic_status="ground_truth",
+        version="1", authority="blocking", status="future",
     ),
 )
 
@@ -70,12 +87,16 @@ _OUTBOUND_LIKE: dict[str, object] = {
     "evaluators": [
         {
             "property": "content_invariants", "target": "output",
-            "technique": "deterministic", "oracle": "invariant",
+            "technique": "deterministic",
+            "evaluation_basis": {"kind": "invariant", "ref": "content_invariants"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
         {
             "property": "publish_authorization", "target": "process",
-            "technique": "human", "oracle": "human_gold",
+            "technique": "human",
+            "evaluation_basis": {"kind": "human_gold", "ref": "publish_authorization"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
     ],
@@ -100,12 +121,16 @@ _DURATION_TASK: dict[str, object] = {
     "evaluators": [
         {
             "property": "content_invariants", "target": "output",
-            "technique": "deterministic", "oracle": "invariant",
+            "technique": "deterministic",
+            "evaluation_basis": {"kind": "invariant", "ref": "content_invariants"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
         {
             "property": "draft_quality", "target": "output",
-            "technique": "llm_judge", "oracle": "proxy",
+            "technique": "llm_judge",
+            "evaluation_basis": {"kind": "rubric", "ref": "draft_quality"},
+            "epistemic_status": "proxy",
             "version": "1", "authority": "advisory",
         },
     ],
@@ -130,12 +155,16 @@ _CASES_TASK: dict[str, object] = {
     "evaluators": [
         {
             "property": "publish_authorization", "target": "process",
-            "technique": "human", "oracle": "human_gold",
+            "technique": "human",
+            "evaluation_basis": {"kind": "human_gold", "ref": "publish_authorization"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
         {
             "property": "canonical_truth", "target": "output",
-            "technique": "human", "oracle": "human_gold",
+            "technique": "human",
+            "evaluation_basis": {"kind": "human_gold", "ref": "canonical_truth"},
+            "epistemic_status": "ground_truth",
             "version": "1", "authority": "blocking",
         },
     ],
@@ -204,14 +233,19 @@ class TestLoaderOutput:
             get_paa_declaration("does_not_exist", directory=declarations_dir, registry=_REGISTRY)
 
     @pytest.mark.parametrize("task", sorted(_EXPECTED_DECLARATIONS))
-    def test_position_policy_matches_fixed_runtime_vocabulary(
+    def test_bare_placements_parse_to_a_default_with_no_overrides(
         self, declarations_dir: Path, task: str,
     ) -> None:
+        # These fixtures author every position in the bare form, which the
+        # contract treats as one mode for every declared evaluator.
         declaration = get_paa_declaration(task, directory=declarations_dir, registry=_REGISTRY)
-        assert declaration.position_policy.manual == "offline"
-        assert declaration.position_policy.hitl == "blocking"
-        assert declaration.position_policy.hotl == "async"
-        assert declaration.position_policy.autonomous == "offline"
+        policy = declaration.position_policy
+        assert policy.declared_positions == ("autonomous", "hitl", "hotl", "manual")
+        assert policy["manual"].default == "offline"
+        assert policy["hitl"].default == "blocking"
+        assert policy["hotl"].default == "async"
+        assert policy["autonomous"].default == "offline"
+        assert all(policy[p].overrides == () for p in policy.declared_positions)
 
 
 class TestTransitionExtraction:
@@ -271,10 +305,13 @@ class TestVocabulary:
 class TestEvaluatorVersionResolution:
     def _evaluator_tuples(
         self, declarations_dir: Path, task: str,
-    ) -> set[tuple[str, str, str, str, str, str]]:
+    ) -> set[tuple[str, str, str, str, str, str, str, str]]:
         d = get_paa_declaration(task, directory=declarations_dir, registry=_REGISTRY)
         return {
-            (e.property, e.target, e.technique, e.oracle, e.version, e.authority)
+            (
+                e.property, e.target, e.technique, e.evaluation_basis.kind,
+                e.evaluation_basis.ref, e.epistemic_status, e.version, e.authority,
+            )
             for e in d.evaluators
         }
 
@@ -282,7 +319,10 @@ class TestEvaluatorVersionResolution:
         self, declarations_dir: Path,
     ) -> None:
         registry_tuples = {
-            (r.property, r.target, r.technique, r.oracle, r.version, r.authority)
+            (
+                r.property, r.target, r.technique, r.evaluation_basis.kind,
+                r.evaluation_basis.ref, r.epistemic_status, r.version, r.authority,
+            )
             for r in _REGISTRY
         }
         for task in _EXPECTED_DECLARATIONS:
@@ -293,16 +333,28 @@ class TestEvaluatorVersionResolution:
 
     def test_outbound_publish_evaluators(self, declarations_dir: Path) -> None:
         assert self._evaluator_tuples(declarations_dir, "outbound_publish") == {
-            ("content_invariants", "output", "deterministic", "invariant", "1", "blocking"),
-            ("publish_authorization", "process", "human", "human_gold", "1", "blocking"),
+            (
+                "content_invariants", "output", "deterministic", "invariant",
+                "content_invariants", "ground_truth", "1", "blocking",
+            ),
+            (
+                "publish_authorization", "process", "human", "human_gold",
+                "publish_authorization", "ground_truth", "1", "blocking",
+            ),
         }
 
     def test_status_future_entry_still_resolves(self, declarations_dir: Path) -> None:
         # reply_surfacing declares draft_quality, which is registered
         # "future" — loading must succeed rather than fail closed.
         d = get_paa_declaration("reply_surfacing", directory=declarations_dir, registry=_REGISTRY)
-        assert ("draft_quality", "output", "llm_judge", "proxy", "1", "advisory") in {
-            (e.property, e.target, e.technique, e.oracle, e.version, e.authority)
+        assert (
+            "draft_quality", "output", "llm_judge", "rubric",
+            "draft_quality", "proxy", "1", "advisory",
+        ) in {
+            (
+                e.property, e.target, e.technique, e.evaluation_basis.kind,
+                e.evaluation_basis.ref, e.epistemic_status, e.version, e.authority,
+            )
             for e in d.evaluators
         }
 
@@ -380,14 +432,30 @@ class TestFailClosed:
         with pytest.raises(PaaDeclarationError, match="missing required field"):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
 
-    def test_position_policy_missing_key_raises(self, tmp_path: Path) -> None:
+    def test_position_policy_omitting_a_referenced_position_raises(
+        self, tmp_path: Path,
+    ) -> None:
+        # hotl is this declaration's promotion.to and demotion.from, so
+        # dropping it leaves transitions pointing at a position the
+        # declaration never declares.
         base = dict(_CASES_TASK)
         policy = dict(base["position_policy"])  # type: ignore[arg-type]
         del policy["hotl"]
         base["position_policy"] = policy
         _write_declaration(tmp_path, base)
-        with pytest.raises(PaaDeclarationError, match="position_policy.*missing required field"):
+        with pytest.raises(PaaDeclarationError, match="is not declared in position_policy"):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_position_policy_may_declare_a_subset_of_positions(self, tmp_path: Path) -> None:
+        # The contract admits any non-empty subset, and this declaration
+        # only ever references hitl and hotl. The fixed four-position table
+        # this loader used to enforce could not express that.
+        base = dict(_CASES_TASK)
+        base["position_policy"] = {"hitl": "blocking", "hotl": "async"}
+        _write_declaration(tmp_path, base)
+        declarations = load_paa_declarations(tmp_path, registry=_REGISTRY)
+        policy = declarations["canonical_promotion_task"].position_policy
+        assert policy.declared_positions == ("hitl", "hotl")
 
     def test_position_policy_unsupported_mode_raises(self, tmp_path: Path) -> None:
         base = dict(_CASES_TASK)
@@ -395,16 +463,25 @@ class TestFailClosed:
         policy["hotl"] = "wat"
         base["position_policy"] = policy
         _write_declaration(tmp_path, base)
-        with pytest.raises(PaaDeclarationError, match="position_policy 'hotl' is unsupported"):
+        with pytest.raises(
+            PaaDeclarationError, match="position_policy 'hotl' placement is unsupported",
+        ):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
 
-    def test_position_policy_diverging_from_fixed_vocabulary_raises(self, tmp_path: Path) -> None:
+    def test_position_policy_unknown_position_raises(self, tmp_path: Path) -> None:
         base = dict(_CASES_TASK)
         policy = dict(base["position_policy"])  # type: ignore[arg-type]
-        policy["hotl"] = "blocking"
+        policy["supervised"] = "blocking"
         base["position_policy"] = policy
         _write_declaration(tmp_path, base)
-        with pytest.raises(PaaDeclarationError, match="does not match the fixed runtime"):
+        with pytest.raises(PaaDeclarationError, match="unsupported position"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_promotion_between_identical_positions_raises(self, tmp_path: Path) -> None:
+        base = dict(_CASES_TASK)
+        base["promotion"] = dict(base["promotion"]) | {"from": "hotl"}  # type: ignore[operator]
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="promotion.from and promotion.to are both"):
             load_paa_declarations(tmp_path, registry=_REGISTRY)
 
 
@@ -570,3 +647,111 @@ class TestDeclarationEncoding:
 
         declarations = load_paa_declarations(tmp_path, registry=_REGISTRY)
         assert declarations[str(base["task"])].promotion.report == "promoción_señal_report"
+
+
+# ---------------------------------------------------------------------------
+# Placement overrides
+# ---------------------------------------------------------------------------
+
+
+class TestPlacementOverrides:
+    """The default-plus-overrides placement form and its cross-field rules.
+
+    A position's placement may refine the default for individual
+    evaluators — a task can hold most evaluators blocking at hotl while
+    letting its human gates run async. Every rule below exists because an
+    override that does not resolve to exactly one evaluator, exactly once,
+    and to something other than the default, is an authoring mistake whose
+    effect would otherwise be silent.
+    """
+
+    def _with_hotl_overrides(self, overrides: list[dict[str, object]]) -> dict[str, object]:
+        base = dict(_DURATION_TASK)
+        policy = dict(base["position_policy"])  # type: ignore[arg-type]
+        policy["hotl"] = {"default": "blocking", "overrides": overrides}
+        base["position_policy"] = policy
+        return base
+
+    def test_override_applies_to_its_evaluator_only(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, self._with_hotl_overrides([
+            {
+                "selector": {"property": "draft_quality", "technique": "llm_judge"},
+                "placement": "async",
+            },
+        ]))
+        declaration = load_paa_declarations(tmp_path, registry=_REGISTRY)["reply_surfacing"]
+        placement = declaration.position_policy["hotl"]
+        by_property = {e.property: e for e in declaration.evaluators}
+
+        assert placement.default == "blocking"
+        assert placement.for_evaluator(by_property["draft_quality"]) == "async"
+        assert placement.for_evaluator(by_property["content_invariants"]) == "blocking"
+
+    def test_bare_placement_applies_its_mode_to_every_evaluator(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, dict(_DURATION_TASK))
+        declaration = load_paa_declarations(tmp_path, registry=_REGISTRY)["reply_surfacing"]
+        placement = declaration.position_policy["hotl"]
+        assert placement.overrides == ()
+        assert all(placement.for_evaluator(e) == "async" for e in declaration.evaluators)
+
+    def test_override_matching_no_evaluator_raises(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, self._with_hotl_overrides([
+            {
+                "selector": {"property": "not_declared", "technique": "human"},
+                "placement": "async",
+            },
+        ]))
+        with pytest.raises(PaaDeclarationError, match="matches no declared evaluator"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_ambiguous_override_raises(self, tmp_path: Path) -> None:
+        # Two versions of one evaluator identity, selected without a
+        # version: the declaration cannot say which one it meant.
+        base = self._with_hotl_overrides([
+            {
+                "selector": {"property": "draft_quality", "technique": "llm_judge"},
+                "placement": "async",
+            },
+        ])
+        evaluators = [dict(e) for e in base["evaluators"]]  # type: ignore[attr-defined]
+        second = dict(evaluators[1])
+        second["version"] = "2"
+        base["evaluators"] = [*evaluators, second]
+        _write_declaration(tmp_path, base)
+        with pytest.raises(PaaDeclarationError, match="matches 2 declared evaluators"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_duplicate_override_raises_even_when_selectors_differ_in_text(
+        self, tmp_path: Path,
+    ) -> None:
+        # A versionless selector and one naming that evaluator's version are
+        # different text and the same evaluator.
+        _write_declaration(tmp_path, self._with_hotl_overrides([
+            {
+                "selector": {"property": "draft_quality", "technique": "llm_judge"},
+                "placement": "async",
+            },
+            {
+                "selector": {
+                    "property": "draft_quality", "technique": "llm_judge", "version": "1",
+                },
+                "placement": "offline",
+            },
+        ]))
+        with pytest.raises(PaaDeclarationError, match="already overridden"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_redundant_override_raises(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, self._with_hotl_overrides([
+            {
+                "selector": {"property": "draft_quality", "technique": "llm_judge"},
+                "placement": "blocking",
+            },
+        ]))
+        with pytest.raises(PaaDeclarationError, match="equals the hotl default"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)
+
+    def test_empty_overrides_list_raises(self, tmp_path: Path) -> None:
+        _write_declaration(tmp_path, self._with_hotl_overrides([]))
+        with pytest.raises(PaaDeclarationError, match="'overrides' must be a non-empty list"):
+            load_paa_declarations(tmp_path, registry=_REGISTRY)

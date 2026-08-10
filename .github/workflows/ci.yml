@@ -37,7 +37,10 @@ jobs:
         run: uv run pytest
 
       - name: Lint
-        run: uv run ruff check src tests
+        # conformance/ is linted here even though it cannot be *run* here:
+        # linting is static and needs none of the contract artifacts, so
+        # there is no reason to let it rot while the run is blocked.
+        run: uv run ruff check src tests conformance
 
       - name: Typecheck
         run: uv run mypy src/paa_runtime
@@ -80,11 +83,31 @@ jobs:
           print('paa_runtime', paa_runtime.__file__)
           "
 
-  # Conformance runs against the published contract artifacts, which are not
-  # published yet. This job is the placeholder for spec step 2: once
-  # paa-contracts is on PyPI it becomes `uv sync --extra conformance` plus the
-  # suite, and the conformance claim stops depending on who ran it.
+  # The conformance suite itself now exists and passes — see conformance/ and
+  # the README's Conformance section. What is still missing is a way for *this*
+  # repo's runner to obtain the contract artifacts.
   #
-  # It is deliberately not written as a skipping job. A test that skips by
-  # default is a test that is off, and this repo already decided that once —
-  # see the schema-harness swap in the extraction spec.
+  # paa-contracts is not on PyPI, and paa_site — the repo it is released from —
+  # is private, so an anonymous runner here can reach it by neither route.
+  # GITHUB_TOKEN cannot help: it is scoped to this repository alone. Enabling a
+  # job here therefore needs one of:
+  #
+  #   1. paa-contracts published to PyPI. The job then reduces to
+  #      `uv sync --locked --extra conformance` and `uv run pytest conformance`,
+  #      and paa-contracts joins the extra in pyproject.toml; or
+  #   2. a cross-repo read credential for paa_site in this repo's secrets, used
+  #      as `uv run --with "paa-contracts @ git+https://...@github.com/..."`.
+  #
+  # Neither is a decision this file should make quietly, so it is left to the
+  # operator rather than committed half-configured.
+  #
+  # The other direction already works anonymously, because paa-runtime is
+  # public and the site's runner has the artifacts on disk: a cross-check job
+  # in the site repo that checks this repo out and runs `pytest conformance`
+  # against the site's own working tree. That is what the extraction spec asks
+  # for — a schema change that breaks the implementation should break the site
+  # build at the source — and it is the site-side follow-up in spec step 5.
+  #
+  # Deliberately not written as a skipping job. A test that skips by default is
+  # a test that is off, and this repo already decided that once — see the
+  # schema-harness swap in the extraction spec.
