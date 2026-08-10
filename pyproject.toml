@@ -1,0 +1,58 @@
+[project]
+name = "paa-runtime"
+version = "0.2.0"
+description = "Reference implementation of the Progressive Autonomy Architecture control plane: task declarations, motion lifecycle, position resolution, content-addressed evidence, and an append-only autonomy event store"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Conformance runs against the published contract artifacts. paa-contracts
+# (schemas + fixtures + invalid-case tables, released from the paa.dev repo)
+# is added here once it ships — see spec 1.5. Nothing in paa_runtime loads a
+# JSON schema at runtime, so this stays test-only and never enters a
+# production install.
+conformance = [
+    "jsonschema>=4.23",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paa_runtime"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "types-pyyaml>=6.0.12.20260518",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["paa_runtime"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+exclude = ["tests/", "conformance/"]
+
+[[tool.mypy.overrides]]
+module = ["yaml", "jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
