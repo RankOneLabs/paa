@@ -13,15 +13,20 @@ import yaml
 from paa_runtime import PaaEvaluationBasis, ProducerRegistration, RuntimeConfig
 
 
-@pytest.fixture(scope="session")
-def data_source() -> str:
-    """Whether the artifacts came from packaged data or a site checkout.
+def pytest_report_header() -> list[str]:
+    """Report which artifacts this run resolved, and from where.
 
-    Both resolve to the same bytes from the same commit, so this never
-    changes an answer — it is surfaced because it changes what a failure
-    *means*.
+    Packaged data and a site checkout are the same bytes from the same
+    commit, so which one is active never changes an answer — but it
+    changes what a failure *means*, which is why it belongs in the run
+    output. A header prints unconditionally; a fixture only reports when
+    something requests it, which is how this started life and why nothing
+    ever saw it.
     """
-    return contracts.DATA_SOURCE
+    return [
+        f"paa-contracts: {contracts.__version__} ({contracts.DATA_SOURCE})",
+        f"contract artifacts: {contracts.CONTRACTS_ROOT}",
+    ]
 
 
 @pytest.fixture(scope="session")

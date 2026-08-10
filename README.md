@@ -103,7 +103,7 @@ The trade-off is named rather than hidden. With the default store, a consumer th
 ```bash
 uv sync
 uv run pytest
-uv run ruff check src tests
+uv run ruff check src tests conformance
 uv run mypy src/paa_runtime
 ```
 
@@ -161,8 +161,8 @@ One honest non-match: the published demotion history binds to a
 `paa-decision-artifact`, while `demote` generates and content-addresses its own
 evidence so an emergency demotion never blocks on an operator producing an
 artifact first. Its event stream reproduces the published one in every field
-except the two naming that evidence, and the suite asserts exactly that rather
-than skipping the fixture.
+except `evidence_ref` and `evidence_sha256`, and the suite asserts exactly that
+rather than skipping the fixture.
 
 The extra deliberately does not name `paa-contracts`. An unresolvable
 requirement cannot be locked, and pinning it to a local path breaks plain

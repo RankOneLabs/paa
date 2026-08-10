@@ -34,6 +34,16 @@ def _unescape(token: str) -> str:
 
 def _descend(document: Any, pointer: str) -> tuple[Any, str]:
     """Resolve *pointer* to its container and the final token."""
+    # Without this guard "a/b" splits to ["b"], which resolves against the
+    # document root and mutates a member the case never named — succeeding
+    # at the wrong edit rather than failing at the right one.
+    #
+    # Guarded on a non-empty pointer because "" is a *well-formed* pointer:
+    # RFC 6901 gives it the whole document. It is rejected below, and for the
+    # accurate reason — it names no member — rather than for bad syntax.
+    if pointer and not pointer.startswith("/"):
+        raise MutationError(f"pointer {pointer!r} does not start with '/'")
+
     tokens = [_unescape(token) for token in pointer.split("/")[1:]]
     if not tokens:
         raise MutationError(f"pointer {pointer!r} does not name a member")
@@ -42,7 +52,11 @@ def _descend(document: Any, pointer: str) -> tuple[Any, str]:
     for token in tokens[:-1]:
         try:
             node = node[int(token)] if isinstance(node, list) else node[token]
-        except (KeyError, IndexError, ValueError) as exc:
+        # TypeError is the one raised by indexing a scalar — a pointer that
+        # descends through a string or number. Letting it escape would break
+        # this module's one promise, that a mutation which does not apply
+        # raises MutationError.
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise MutationError(f"pointer {pointer!r} does not resolve: {exc}") from exc
     return node, tokens[-1]
 
@@ -51,7 +65,7 @@ def _read(document: Any, pointer: str) -> Any:
     node, last = _descend(document, pointer)
     try:
         return node[int(last)] if isinstance(node, list) else node[last]
-    except (KeyError, IndexError, ValueError) as exc:
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise MutationError(f"pointer {pointer!r} does not resolve: {exc}") from exc
 
 
@@ -86,7 +100,7 @@ def apply_mutations(base: Any, mutations: Sequence[Any]) -> Any:
                     del node[int(last)]
                 else:
                     del node[last]
-            except (KeyError, IndexError, ValueError) as exc:
+            except (KeyError, IndexError, TypeError, ValueError) as exc:
                 raise MutationError(
                     f"remove at {mutation['path']!r} does not resolve: {exc}"
                 ) from exc
