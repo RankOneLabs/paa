@@ -90,6 +90,9 @@ finally:
     store.close()
 ```
 
+For a complete disposable propose → approve → demote walk, run the
+[`refund_approval` quickstart](examples/refund_quickstart/README.md).
+
 `scope` is `None` for a task whose declaration has no `scopes` block, and must be one of the declared scopes otherwise.
 
 ## Overriding the store
@@ -106,6 +109,12 @@ uv run pytest
 uv run ruff check src tests conformance packages
 uv run mypy src/paa_runtime
 ```
+
+The implementation-to-spec mapping, including explicit non-matches, is in
+[`PAA.md`](PAA.md). The conformance corpus also includes a contract-shaped
+history captured from Scout's pre-cutover implementation. Scout production had
+zero autonomy events at cutover, so that artifact is deliberately labeled an
+implementation capture rather than production transition history.
 
 ### Conformance
 

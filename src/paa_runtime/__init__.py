@@ -75,6 +75,7 @@ from paa_runtime.evidence import (
     store_evidence,
     verify_evidence,
 )
+from paa_runtime.replay import import_events
 from paa_runtime.service import (
     Motion,
     PaaCorruptHistoryError,
@@ -118,6 +119,7 @@ __all__ = [
     "resolve_position",
     "to_position_resolution",
     "resolve_actor",
+    "import_events",
     # Projections and rows
     "Motion",
     "AutonomyEvent",

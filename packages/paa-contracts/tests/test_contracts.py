@@ -31,6 +31,7 @@ class TestDataResolution:
         assert contracts._missing_roots(tmp_path) == (
             "examples/paa-tasks",
             "examples/runtime-conformance",
+            "examples/scout-archive",
         )
 
     def test_the_resolved_root_is_complete(self) -> None:
