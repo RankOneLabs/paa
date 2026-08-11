@@ -14,6 +14,12 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "Refusing to publish from $GITHUB_REF; dispatch this workflow from main."
+          exit 1
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
@@ -21,7 +27,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
+
+      - name: Configure npm trusted publishing
+        run: |
+          npm install --global npm@12.0.2
+          npm config set registry https://registry.npmjs.org
+
+      - name: Verify package contents and installation
+        run: |
+          npm pack --dry-run --json
+          package_tarball="$(npm pack --pack-destination "$RUNNER_TEMP" --silent)"
+          install_dir="$(mktemp -d)"
+          npm install --ignore-scripts --prefix "$install_dir" "$RUNNER_TEMP/$package_tarball"
+          node -e "const p = require(process.argv[1]); if (p.name !== '@paadev/paa-contracts') process.exit(1)" \
+            "$install_dir/node_modules/@paadev/paa-contracts/package.json"
 
       - name: Publish package
         run: npm publish --access public
