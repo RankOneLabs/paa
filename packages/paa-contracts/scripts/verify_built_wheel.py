@@ -25,7 +25,12 @@ import zipfile
 from pathlib import Path
 
 # Relative to the repo root; must stay in step with hatch_build.py's _ARTIFACTS.
-ARTIFACT_DIRS = ("schemas", "examples/paa-tasks", "examples/runtime-conformance")
+ARTIFACT_DIRS = (
+    "schemas",
+    "examples/paa-tasks",
+    "examples/runtime-conformance",
+    "examples/scout-archive",
+)
 
 _DATA_MARKER = "/_data/"
 
