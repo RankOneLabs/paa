@@ -18,8 +18,8 @@ where the implementation deliberately stops.
 | `AutonomyEvent`, `EventStore` | Autonomy event | Uses the contract's fourteen-field event representation and an implementation protocol with explicit ordering, transaction, uniqueness, and append-only semantics. |
 | `SqliteEventStore` | Evidence/event log substrate | Supplies the default append-only SQLite store, including storage-level update/delete rejection. |
 | `store_evidence`, `verify_evidence` | Evidence record binding | Content-addresses exact evidence bytes with SHA-256 and fails closed on missing or changed bytes. |
-| `import_events` | Archive replay | Imports already validated contract-shaped events without regenerating identifiers or timestamps. The Scout conformance capture proves field and projection continuity across extraction. |
-| `paa-contracts` conformance suite | Published contract | Checks schema vocabulary, declarations, event histories, evidence addressing, invalid semantic cases, and the Scout pre-cutover capture against the same packaged corpus. |
+| `import_events` | Archive replay | Imports already validated contract-shaped events without regenerating identifiers or timestamps. The legacy conformance capture proves field and projection continuity across extraction. |
+| `paa-contracts` conformance suite | Published contract | Checks schema vocabulary, declarations, event histories, evidence addressing, invalid semantic cases, and the pre-cutover capture against the same packaged corpus. |
 
 ## Lifecycle coverage
 
@@ -44,13 +44,13 @@ field loss, that the lifecycle can produce them, that content addresses are
 re-derived from bytes, and that runtime-owned negative cases fail for the
 published reason.
 
-`examples/scout-archive/pre-cutover-capture.json` adds the consumer-boundary
-proof. It was generated with Scout's pre-cutover lifecycle implementation at
+`examples/legacy-archive/pre-cutover-capture.json` adds the consumer-boundary
+proof. It was generated with the source consumer's pre-cutover lifecycle implementation at
 commit `721c37facac64f12a164e510c9a0aa647a960cba`, then imported into the
 extracted runtime. The test reproduces its event rows, motion projection, and
 resolved position exactly.
 
-Scout's production `autonomy_events` table contained zero rows at cutover. The
+The source consumer's production `autonomy_events` table contained zero rows at cutover. The
 capture is therefore evidence from the real pre-cutover implementation, not a
 claim that a production autonomy transition occurred. Keeping that distinction
 in the artifact is part of the citation bar.
@@ -61,7 +61,7 @@ in the artifact is part of the citation bar.
 
 The runtime validates evaluator identities and producer registration but does
 not run graders, judges, invariants, or human-review systems. Those are consumer
-domain code. Scout, for example, owns the producers named by its declarations.
+domain code. Each consumer owns the producers named by its declarations.
 
 ### Promotion-rule evaluation
 
@@ -91,8 +91,8 @@ effect committed in a consumer's separate database. A demotion can land after
 the read and before that effect. The event history remains valid, but the
 in-flight effect used a stale permit.
 
-`EventStore` exists for consumers that cannot accept that window. Scout
-implements the protocol over its own database, so the position read authorizing
+`EventStore` exists for consumers that cannot accept that window. A consumer can
+implement the protocol over its own database, so the position read authorizing
 a publication and the publication claim share one `BEGIN IMMEDIATE` lock
 domain. The general runtime exposes this escape hatch; it cannot manufacture
 cross-database atomicity for every consumer.
@@ -110,7 +110,7 @@ The accurate claim is:
 
 > `paa-runtime` implements PAA's declared autonomy-transition lifecycle and
 > passes the published conformance corpus, including replay of a history
-> captured from Scout's pre-cutover implementation.
+> captured from the source consumer's pre-cutover implementation.
 
 It is not a claim that the runtime implements evaluation, worker attestation,
 or every consumer's governed effect.

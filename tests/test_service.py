@@ -2,12 +2,12 @@
 show/list workflows — the core of the event-sourced PAA autonomy control
 plane.
 
-Ported from Scout's tests/test_paa_service.py. Scout's in_memory_state
+Ported from the source consumer's service tests. Its in_memory_state
 fixture, its module-global PRODUCER_REGISTRY, and its checked-in
 contracts/paa declarations directory don't exist here — this package
-ships no conftest, so a real SqliteEventStore against a tmp_path database
-plus small local declaration fixtures (mirroring tests/test_declarations.
-py's approach) stand in for them.
+ships no conftest, so a real SqliteEventStore against a tmp_path database plus
+small local declaration fixtures (mirroring tests/test_declarations.py's
+approach) stand in for them.
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ _FIXED_POSITION_POLICY: dict[str, object] = {
     "autonomous": "offline",
 }
 
-# Mirrors Scout's outbound_content_publish.v1.yaml: active deployment, a
+# Mirrors the source outbound_content_publish.v1.yaml: active deployment, a
 # declared scopes block, hitl<->hotl promotion/demotion — the declaration
 # B1's "declares scopes" branch and the scope-allowlist tests exercise.
 _OUTBOUND_TASK: dict[str, object] = {
@@ -89,7 +89,7 @@ _OUTBOUND_TASK: dict[str, object] = {
     },
 }
 
-# Mirrors Scout's inbound_reply_surfacing.v1.yaml: no scopes block — the
+# Mirrors the source inbound_reply_surfacing.v1.yaml: no scopes block — the
 # declaration B1's "declares no scopes" branch exercises.
 _INBOUND_TASK: dict[str, object] = {
     "task": INBOUND,
@@ -128,7 +128,7 @@ def _versioned_config(
 ) -> RuntimeConfig:
     """A RuntimeConfig pointed at a one-task declarations directory cloned
     from _OUTBOUND_TASK with version/initial_position overridden — mirrors
-    Scout's _write_versioned_declaration technique for isolating a
+    the source suite's versioned-declaration technique for isolating a
     declaration-version bump in a test."""
     document = dict(_OUTBOUND_TASK)
     document["version"] = version
@@ -160,7 +160,7 @@ def config(declarations_dir: Path, evidence_root: Path, tmp_path: Path) -> Runti
         evidence_root=evidence_root,
         registry=_REGISTRY,
         db_path=tmp_path / "autonomy_events.db",
-        actor_env_var="SCOUT_PAA_ACTOR",
+        actor_env_var="PAA_TEST_ACTOR",
     )
 
 
@@ -474,7 +474,7 @@ class TestPropose:
         evidence_file: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setenv("SCOUT_PAA_ACTOR", "env-actor")
+        monkeypatch.setenv("PAA_TEST_ACTOR", "env-actor")
         explicit = svc.propose(
             store, config, task=OUTBOUND, scope=BLUESKY, to_position="hotl",
             evidence_path=evidence_file, actor="explicit-actor",
@@ -491,9 +491,9 @@ class TestPropose:
         self, monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """B2: resolve_actor reads config.actor_env_var, not a hardcoded
-        SCOUT_PAA_ACTOR — a differently named variable is honored."""
-        monkeypatch.delenv("SCOUT_PAA_ACTOR", raising=False)
-        monkeypatch.setenv("SCOUT_PAA_ACTOR", "wrong-actor")
+        configured actor variable — a differently named variable is honored."""
+        monkeypatch.delenv("PAA_TEST_ACTOR", raising=False)
+        monkeypatch.setenv("PAA_TEST_ACTOR", "wrong-actor")
         monkeypatch.setenv("CUSTOM_PAA_ACTOR", "right-actor")
         assert svc.resolve_actor(None, env_var="CUSTOM_PAA_ACTOR") == "right-actor"
 

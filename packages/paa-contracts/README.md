@@ -10,7 +10,7 @@ PAA is implementation-neutral by construction, which is only true if the contrac
 
 ```
 paa-contracts  ←  paa-runtime          (reference implementation, conformance suite)
-               ←  Scout                (production consumer, task-schema validation)
+               ←  consumer             (production consumer, task-schema validation)
                ←  your implementation
 ```
 
