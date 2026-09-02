@@ -5,9 +5,9 @@ plane.
 Ported from the source consumer's service tests. Its in_memory_state
 fixture, its module-global PRODUCER_REGISTRY, and its checked-in
 contracts/paa declarations directory don't exist here — this package
-ships no conftest, so a real SqliteEventStore against a tmp_path database
-plus small local declaration fixtures (mirroring tests/test_declarations.
-py's approach) stand in for them.
+ships no conftest, so a real SqliteEventStore against a tmp_path database plus
+small local declaration fixtures (mirroring tests/test_declarations.py's
+approach) stand in for them.
 """
 
 from __future__ import annotations
@@ -128,7 +128,7 @@ def _versioned_config(
 ) -> RuntimeConfig:
     """A RuntimeConfig pointed at a one-task declarations directory cloned
     from _OUTBOUND_TASK with version/initial_position overridden — mirrors
-    The source suite's versioned-declaration technique for isolating a
+    the source suite's versioned-declaration technique for isolating a
     declaration-version bump in a test."""
     document = dict(_OUTBOUND_TASK)
     document["version"] = version
