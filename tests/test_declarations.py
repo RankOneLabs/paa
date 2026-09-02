@@ -1,21 +1,20 @@
 """Access-layer tests for paa_runtime.declarations.
 
-Ported from Scout's tests/test_paa_declarations.py. Only the access-layer
+Ported from the source consumer's declaration tests. Only the access-layer
 concern comes with the package — loader output, transition extraction,
 vocabulary, deployment values, evaluator-version resolution,
 filename/identity invariants, and fail-closed error handling. The
 schema-stage conformance class (``TestSchemaConformance``, marked
-``paa_contract``) and Scout's checkout-discovery harness in
-``tests/conftest.py`` do not port: that harness stays in Scout and is
+``paa_contract``) and the checkout-discovery harness do not port: that harness is
 being replaced separately (paa-contracts), and this package ships no
 conftest.
 
-Scout's declaration loader used to read from a checked-in
+The source declaration loader used to read from a checked-in
 ``contracts/paa/`` directory and resolve evaluators against a
 module-global ``PRODUCER_REGISTRY``. Both are now supplied by the
 caller, so these tests build small declaration fixtures under
 ``tmp_path`` and define a local registry tuple instead of reading
-Scout's repository.
+the source repository.
 """
 
 from __future__ import annotations
@@ -78,7 +77,7 @@ _FIXED_POSITION_POLICY: dict[str, object] = {
     "autonomous": "offline",
 }
 
-# Mirrors Scout's outbound_content_publish.v1.yaml: active deployment,
+# Mirrors the source outbound_content_publish.v1.yaml: active deployment,
 # a declared scopes block, a cases promotion window.
 _OUTBOUND_LIKE: dict[str, object] = {
     "task": "outbound_publish",
@@ -113,7 +112,7 @@ _OUTBOUND_LIKE: dict[str, object] = {
     },
 }
 
-# Mirrors Scout's inbound_reply_surfacing.v1.yaml: shadow deployment, no
+# Mirrors the source inbound_reply_surfacing.v1.yaml: shadow deployment, no
 # scopes block, a duration promotion window, and a "future" evaluator.
 _DURATION_TASK: dict[str, object] = {
     "task": "reply_surfacing",
@@ -147,7 +146,7 @@ _DURATION_TASK: dict[str, object] = {
     },
 }
 
-# Mirrors Scout's canonical_promotion.v1.yaml: disabled deployment, no
+# Mirrors the source canonical_promotion.v1.yaml: disabled deployment, no
 # scopes block, a fifty-case promotion window, and a "future" evaluator.
 _CASES_TASK: dict[str, object] = {
     "task": "canonical_promotion_task",
@@ -193,8 +192,7 @@ _EXPECTED_DECLARATIONS: dict[str, dict[str, object]] = {
 def _write_declaration(directory: Path, document: dict[str, object]) -> Path:
     """Write *document* as ``<task>.v<version>.yaml`` under *directory*.
 
-    Mirrors Scout's ``_write_versioned_declaration`` technique (see
-    Scout's tests/test_content_publishing.py:63) for building an
+    Mirrors the source suite's versioned-declaration technique for building an
     isolated one-file declarations directory in a test.
     """
     path = directory / f"{document['task']}.v{document['version']}.yaml"

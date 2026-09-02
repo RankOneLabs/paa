@@ -35,7 +35,7 @@ _ARTIFACTS: tuple[tuple[str, str], ...] = (
     ("schemas", "schemas"),
     ("examples/paa-tasks", "examples/paa-tasks"),
     ("examples/runtime-conformance", "examples/runtime-conformance"),
-    ("examples/scout-archive", "examples/scout-archive"),
+    ("examples/legacy-archive", "examples/legacy-archive"),
 )
 
 

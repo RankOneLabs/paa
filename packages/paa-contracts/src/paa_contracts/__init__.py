@@ -7,7 +7,7 @@ has no dependencies — it is data, plus honest paths to that data.
 
 The dependency direction is the point. An implementation depends on the
 contract; the contract never depends on an implementation. ``paa-runtime`` is
-the first consumer, Scout's task-schema conformance test is the second, and a
+the first consumer, a task-schema conformance test is the second, and a
 second implementation in any language gets its fixtures the same way the first
 one does. That is implementation-neutrality made mechanical instead of
 asserted.
@@ -135,7 +135,7 @@ _REQUIRED_ROOTS: tuple[str, ...] = (
     "schemas",
     "examples/paa-tasks",
     "examples/runtime-conformance",
-    "examples/scout-archive",
+    "examples/legacy-archive",
 )
 
 

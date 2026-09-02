@@ -4,7 +4,7 @@
   "production_event_count_at_cutover": 0,
   "events": [
     {
-      "actor": "scout-capture-operator",
+      "actor": "capture-operator",
       "created_at": "2026-08-11T19:07:04.074003Z",
       "declaration_version": 1,
       "event": "motion_proposed",
@@ -20,7 +20,7 @@
       "to_position": "hotl"
     },
     {
-      "actor": "scout-capture-operator",
+      "actor": "capture-operator",
       "created_at": "2026-08-11T19:07:04.083086Z",
       "declaration_version": 1,
       "event": "motion_approved",
@@ -36,7 +36,7 @@
       "to_position": "hotl"
     },
     {
-      "actor": "scout-capture-operator",
+      "actor": "capture-operator",
       "created_at": "2026-08-11T19:07:04.083179Z",
       "declaration_version": 1,
       "event": "position_changed",
@@ -66,7 +66,7 @@
   "motions": [
     {
       "approved_at": "2026-08-11T19:07:04.083086Z",
-      "approved_by": "scout-capture-operator",
+      "approved_by": "capture-operator",
       "approved_reason": "approved captured pre-cutover promotion",
       "declaration_version": 1,
       "evidence_ref": "evidence/paa/76ea9113c9000f7fab53d48dd9149b101686cceda42798f84469a050f1294315/evidence.json",
@@ -75,7 +75,7 @@
       "from_position": "hitl",
       "motion_id": "36205f56-87a5-4343-9d2c-44308b23a1a8",
       "proposed_at": "2026-08-11T19:07:04.074003Z",
-      "proposed_by": "scout-capture-operator",
+      "proposed_by": "capture-operator",
       "proposed_reason": "captured pre-cutover promotion",
       "rejected_at": null,
       "rejected_by": null,

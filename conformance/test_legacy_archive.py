@@ -1,4 +1,4 @@
-"""Replay a history captured from Scout's pre-cutover implementation."""
+"""Replay a history captured from a consumer's pre-cutover implementation."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from paa_runtime import RuntimeConfig, SqliteEventStore, list_motions, show
 from paa_runtime.replay import import_events
 
 
-def test_scout_pre_cutover_capture_reproduces_its_projections(
+def test_legacy_pre_cutover_capture_reproduces_its_projections(
     runtime_config: RuntimeConfig,
 ) -> None:
-    archive_path = contracts.EXAMPLES_ROOT / "scout-archive" / "pre-cutover-capture.json"
+    archive_path = contracts.EXAMPLES_ROOT / "legacy-archive" / "pre-cutover-capture.json"
     archive: dict[str, Any] = json.loads(archive_path.read_text(encoding="utf-8"))
 
     assert archive["capture_kind"] == "pre-cutover-implementation"
