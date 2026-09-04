@@ -6,6 +6,7 @@ import copy
 import json
 import sqlite3
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -171,9 +172,13 @@ def test_malformed_json_fails_closed() -> None:
 @pytest.mark.parametrize("stamp", [
     "2026-01-01T00:00:00+01:99", "2026-01-01T24:00:00Z", "2026-02-30T00:00:00Z",
 ])
-def test_invalid_timestamp_fails_closed(record: OperatingRecord, stamp: str) -> None:
-    record["timestamps"]["started_at"] = stamp
-    with pytest.raises(OperatingRecordError):
+@pytest.mark.parametrize("field", ["started_at", "completed_at", "recorded_at"])
+def test_invalid_timestamp_reports_its_field_path(
+    record: OperatingRecord, stamp: str,
+    field: Literal["started_at", "completed_at", "recorded_at"],
+) -> None:
+    record["timestamps"][field] = stamp
+    with pytest.raises(OperatingRecordError, match=f"/timestamps/{field}"):
         decode_operating_record(json.dumps(record).encode())
 
 

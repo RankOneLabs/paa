@@ -132,7 +132,10 @@ def _timestamp(value: object, path: str) -> None:
     )
     if re.fullmatch(pattern, stamp) is None:
         _fail(path, "expected an RFC 3339 date-time with timezone")
-    datetime.fromisoformat(stamp.upper().replace("Z", "+00:00"))
+    try:
+        datetime.fromisoformat(stamp.upper().replace("Z", "+00:00"))
+    except ValueError as error:
+        _fail(path, str(error))
 
 
 def decode_operating_record(data: bytes) -> OperatingRecord:
