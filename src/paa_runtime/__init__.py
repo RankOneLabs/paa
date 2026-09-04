@@ -75,6 +75,22 @@ from paa_runtime.evidence import (
     store_evidence,
     verify_evidence,
 )
+from paa_runtime.operating import (
+    CURRENT_OPERATING_SCHEMA,
+    OperatingComponent,
+    OperatingPrice,
+    OperatingRecord,
+    OperatingRecordError,
+    RecordSubject,
+    RecordTimestamps,
+    WorkerIdentity,
+    decode_operating_record,
+)
+from paa_runtime.operating_store import (
+    OperatingRecordStore,
+    OperatingStoreError,
+    SqliteOperatingRecordStore,
+)
 from paa_runtime.replay import import_events
 from paa_runtime.service import (
     Motion,
@@ -101,13 +117,25 @@ from paa_runtime.service import (
 from paa_runtime.sqlite_store import SqliteEventStore
 from paa_runtime.store import AutonomyEvent, EventStore
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     # Construction surface
     "RuntimeConfig",
     "SqliteEventStore",
     "EventStore",
+    "SqliteOperatingRecordStore",
+    "OperatingRecordStore",
+    "OperatingStoreError",
+    "OperatingRecord",
+    "OperatingRecordError",
+    "OperatingComponent",
+    "OperatingPrice",
+    "RecordSubject",
+    "RecordTimestamps",
+    "WorkerIdentity",
+    "CURRENT_OPERATING_SCHEMA",
+    "decode_operating_record",
     # Lifecycle API
     "propose",
     "approve",

@@ -52,8 +52,8 @@ class TestDataResolution:
 
 
 class TestSchemas:
-    def test_all_four_contracts_are_present(self) -> None:
-        assert len(contracts.SCHEMA_IDS) == 4
+    def test_all_five_contracts_are_present(self) -> None:
+        assert len(contracts.SCHEMA_IDS) == 5
 
     @pytest.mark.parametrize("schema_id", contracts.SCHEMA_IDS)
     def test_schema_file_exists(self, schema_id: str) -> None:
@@ -81,7 +81,8 @@ class TestPositiveFixtures:
         [
             (contracts.task_declaration_paths, 4),
             (contracts.autonomy_event_paths, 5),
-            (contracts.evidence_record_paths, 3),
+            (contracts.evidence_record_paths, 4),
+            (contracts.operating_record_paths, 4),
             (contracts.decision_artifact_paths, 5),
             (contracts.payload_schema_paths, 2),
         ],
@@ -98,6 +99,7 @@ class TestPositiveFixtures:
             contracts.task_declaration_paths,
             contracts.autonomy_event_paths,
             contracts.evidence_record_paths,
+            contracts.operating_record_paths,
             contracts.decision_artifact_paths,
             contracts.payload_schema_paths,
         ],
@@ -120,7 +122,7 @@ class TestPositiveFixtures:
 class TestInvalidCases:
     @pytest.mark.parametrize(
         ("kind", "expected_count"),
-        [("task", 63), ("evidence", 6), ("decision", 11), ("event", 15)],
+        [("task", 63), ("evidence", 15), ("decision", 11), ("event", 15), ("operating", 43)],
     )
     def test_case_table_size_is_pinned(self, kind: str, expected_count: int) -> None:
         assert len(contracts.invalid_cases(kind)) == expected_count  # type: ignore[arg-type]
@@ -153,6 +155,7 @@ class TestInvalidCases:
             ("evidence", ("evidence_semantic", "structural")),
             ("decision", ("decision_semantic", "structural")),
             ("event", ("event_semantic", "structural")),
+            ("operating", ("structural",)),
         ],
     )
     def test_stage_vocabulary_is_pinned(self, kind: str, expected_stages: tuple[str, ...]) -> None:

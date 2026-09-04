@@ -1,6 +1,6 @@
 """Published Progressive Autonomy Architecture contract artifacts.
 
-This package is the contract side of the PAA split: the four normative JSON
+This package is the contract side of the PAA split: the five normative JSON
 Schemas, the positive fixture corpus every implementation is checked against,
 and the table-driven invalid-case matrices. It contains no runtime logic and
 has no dependencies — it is data, plus honest paths to that data.
@@ -25,7 +25,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, NotRequired, TypedDict
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 class ContractsUnavailableError(RuntimeError):
@@ -38,6 +38,7 @@ class ContractsUnavailableError(RuntimeError):
 
 
 SchemaId = Literal[
+    "paa-operating-record",
     "paa-task",
     "paa-evidence-record",
     "paa-decision-artifact",
@@ -50,17 +51,18 @@ SchemaId = Literal[
 #: in other languages keep their own list and check it the same way, against
 #: the artifacts rather than against this one.
 SCHEMA_IDS: tuple[SchemaId, ...] = (
+    "paa-operating-record",
     "paa-task",
     "paa-evidence-record",
     "paa-decision-artifact",
     "paa-autonomy-event",
 )
 
-CaseKind = Literal["task", "evidence", "decision", "event"]
+CaseKind = Literal["task", "evidence", "decision", "event", "operating"]
 
-#: The invalid-case tables. Every case in all four shares one shape, which is
+#: The invalid-case tables. Every case shares one shape, which is
 #: what lets a single accessor serve all of them.
-CASE_KINDS: tuple[CaseKind, ...] = ("task", "evidence", "decision", "event")
+CASE_KINDS: tuple[CaseKind, ...] = ("task", "evidence", "decision", "event", "operating")
 
 
 # One edit applied to a positive fixture to produce an invalid document.
@@ -203,6 +205,7 @@ TAMPERED_EVIDENCE_ROOT: Path = (
 )
 
 _CASE_TABLES: Mapping[CaseKind, Path] = {
+    "operating": RUNTIME_FIXTURES_ROOT / "invalid" / "operating-cases.json",
     "task": TASK_FIXTURES_ROOT / "invalid" / "cases.json",
     "evidence": RUNTIME_FIXTURES_ROOT / "invalid" / "evidence-cases.json",
     "decision": RUNTIME_FIXTURES_ROOT / "invalid" / "decision-cases.json",
@@ -213,6 +216,7 @@ _CASE_TABLES: Mapping[CaseKind, Path] = {
 #: plain filenames; evidence and decision bases are ``evidence/paa/<sha>/…``
 #: refs relative to their content-addressed root.
 _CASE_BASE_ROOTS: Mapping[CaseKind, Path] = {
+    "operating": RUNTIME_FIXTURES_ROOT / "operating-records",
     "task": TASK_FIXTURES_ROOT,
     "evidence": RUNTIME_FIXTURES_ROOT / "evidence-records",
     "decision": RUNTIME_FIXTURES_ROOT / "decision-artifacts",
@@ -274,6 +278,11 @@ def task_declaration_paths() -> tuple[Path, ...]:
 def autonomy_event_paths() -> tuple[Path, ...]:
     """The valid autonomy-event sequences — one motion's full history per file."""
     return _sorted_files(RUNTIME_FIXTURES_ROOT / "autonomy-events", ".json")
+
+
+def operating_record_paths() -> tuple[Path, ...]:
+    """Valid operating records, including summaries and unavailable costs."""
+    return _sorted_files(RUNTIME_FIXTURES_ROOT / "operating-records", ".json")
 
 
 def evidence_record_paths() -> tuple[Path, ...]:
@@ -370,6 +379,7 @@ __all__ = [
     "case_stages",
     "decision_artifact_paths",
     "evidence_record_paths",
+    "operating_record_paths",
     "invalid_cases",
     "load_schema",
     "payload_schema_paths",

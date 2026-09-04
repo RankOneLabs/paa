@@ -1,6 +1,6 @@
 # paa-contracts
 
-The published contract artifacts of the [Progressive Autonomy Architecture](https://www.paa.dev): four normative JSON Schemas, the positive fixture corpus every implementation is checked against, and the table-driven invalid-case matrices.
+The published contract artifacts of the [Progressive Autonomy Architecture](https://www.paa.dev): five normative JSON Schemas, the positive fixture corpus every implementation is checked against, and the table-driven invalid-case matrices.
 
 No runtime logic, no dependencies. This package is data and honest paths to it.
 
@@ -85,9 +85,9 @@ The consequence: a wheel can only be built from a full checkout of this repo. Th
 
 | Path | What |
 |---|---|
-| `schemas/` | `paa-task`, `paa-evidence-record`, `paa-decision-artifact`, `paa-autonomy-event` |
+| `schemas/` | `paa-task`, `paa-evidence-record`, `paa-decision-artifact`, `paa-autonomy-event`, `paa-operating-record` |
 | `examples/paa-tasks/` | four valid declarations + 63 invalid cases |
-| `examples/runtime-conformance/` | evidence records, decision artifacts, autonomy-event sequences, payload companion schemas, 32 invalid cases |
+| `examples/runtime-conformance/` | evidence and operating records, decision artifacts, autonomy-event sequences, payload companion schemas, 84 invalid cases |
 | `examples/runtime-conformance/invalid/fixtures/tampered-evidence/` | a deliberately byte-mismatched artifact, so tamper detection has something real to fail on |
 
 ## Versioning
@@ -100,10 +100,38 @@ contracts.schema_version("paa-autonomy-event")   # 'paa-autonomy-event/0.1.0-dra
 
 ## Development
 
+### Contract changes in 0.2.0
+
+`paa-evidence-record/0.2.0-draft` admits optional `worker` attribution. When
+present, all of `id`, `version`, and opaque `configuration_ref` are required
+and nonempty. `producer` continues to identify the evaluator side, not the
+worker. The schema also accepts existing `0.1.0-draft` records without worker
+attribution; adding worker attribution requires the new record stamp. Existing
+content-addressed fixtures are retained byte-for-byte.
+
+`paa-operating-record/0.1.0-draft` is a new optional artifact. Its task, version,
+scope, subject and worker identify the accounting boundary, with constituent
+attempt attribution carried by durable `source_references`. Usage and prices
+may be explicitly null when unavailable. Usage keys and component kinds are
+open vocabulary. Component prices require the same currency/amount/basis
+shape as the base price, and must not repeat costs already included there.
+Measured/estimated coverage and repricing detail must remain in referenced
+source artifacts; schema conformance does not verify those external claims.
+
+`operating_record_paths()` discovers four illustrative positive fixtures;
+`invalid_cases("operating")` provides 43 structural negative cases. The
+pipeline example's references stand for constituent usage sources, not actual
+production measurements. Consumers must resolve their own durable sources,
+reconcile overlapping summaries, retain failed-attempt charges, and compute
+any cost-per-accepted-outcome metric over matching populations. Neither cost
+nor worker identity is consumed by runtime transition rules in this revision.
+
+### Commands
+
 Released from this repo, where the schemas and fixtures live alongside the reference implementation that is measured against them.
 
 ```bash
-uv run pytest                      # includes registry parity against contract-registry.mjs
+uv run pytest                      # includes registry parity against schemas on disk
 uv run ruff check src tests
 uv run mypy src/paa_contracts
 uv build                           # must run from a full repo checkout

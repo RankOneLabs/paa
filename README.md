@@ -11,12 +11,14 @@ PAA is implementation-neutral by construction — it describes *what* a governed
 - **Position resolution** — current autonomy position is never stored. It is folded fresh from the declaration's `initial_position` plus the latest exact-scope `position_changed` event.
 - **Evidence binding** — every motion binds to the exact bytes of its evidence artifact by SHA-256, re-verified at approval. Tamper or loss is a fail-closed error.
 - **An append-only event store** — append-only enforced by the storage layer, not by convention.
+- **Operating-record storage** — a separate optional append-only store preserves subject-linked usage, prices, worker configurations, and source attribution. It has no role in resolving authority.
 
 ## What it does not do
 
 - **Produce evaluator verdicts.** The runtime governs; consumers evaluate. Which evaluators exist and what code produces each verdict is consumer domain data, supplied as a registry.
 - **Evaluate promotion rules.** Thresholds and windows are *declared*, not machine-evaluated. Approval is an operator judgment.
-- **Carry worker identity.** The contract has no worker-identity field yet, so evidence windows cannot prove which worker produced them. Tracked for a later contract cycle.
+- **Enforce worker-configuration policies.** Evidence records can carry optional worker attribution; evidence storage preserves those bytes. Single-configuration windows and configuration-change demotion remain future declaration rules, not implemented behavior.
+- **Calculate or govern by cost.** Consumers produce prices, retain constituent usage, distinguish actuals from estimates, assess coverage, and reconcile overlapping summaries. Neither operating records nor worker attribution changes transition eligibility in this revision.
 
 ## Install
 
@@ -122,7 +124,7 @@ The conformance suite runs against the published contract artifacts rather
 than fixtures of its own, so that "passes the published conformance suite" is
 a claim about the contract and not about this repo's idea of it.
 
-Those artifacts come from `paa-contracts` — the four normative schemas, the
+Those artifacts come from `paa-contracts` — the five normative schemas, the
 positive fixture corpus, and the invalid-case tables. It is the other package
 this repo publishes, and a workspace member here, so the extra is all it takes:
 
@@ -186,6 +188,61 @@ release would carry the corpus.
 
 ## Status
 
-`0.3.0`, tracking the `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft` schema families. Package and spec versions drift independently — the schema families a release targets are stated here and asserted by the conformance suite, not inferred from the package version.
+`0.4.0` adds optional operating-record storage against `paa-operating-record/0.1.0-draft` and preserves optional worker attribution in `paa-evidence-record/0.2.0-draft`. Existing `paa-evidence-record/0.1.0-draft` records without worker attribution remain valid. No evidence files or event histories require migration. Task and event families remain `paa-task/0.2.1-draft` and `paa-autonomy-event/0.1.0-draft`. Package and schema-family versions are independent; this PR prepares release versions but does not publish packages.
 
-`0.3.0` is a breaking change to the declaration access layer, and it is the change that made the sentence above true. `0.2.0` claimed the `paa-task/0.2.1-draft` family while implementing an older evaluator identity — a single `oracle` field where the contract has `evaluation_basis` and `epistemic_status` — and a `position_policy` requiring all four positions at fixed modes, where the contract admits any non-empty subset with per-evaluator placement overrides. It could not load a single published declaration. Building the conformance suite is what surfaced that; `PaaEvaluator`, `ProducerRegistration`, and `PaaPositionPolicy` changed shape to fix it. Nothing was published at `0.2.0`, so no consumer is stranded.
+`0.3.0` introduced a breaking change to the declaration access layer to align it with the published task family. `0.2.0` claimed the `paa-task/0.2.1-draft` family while implementing an older evaluator identity — a single `oracle` field where the contract has `evaluation_basis` and `epistemic_status` — and a `position_policy` requiring all four positions at fixed modes, where the contract admits any non-empty subset with per-evaluator placement overrides. It could not load a single published declaration. Building the conformance suite is what surfaced that; `PaaEvaluator`, `ProducerRegistration`, and `PaaPositionPolicy` changed shape to fix it. Nothing was published at `0.2.0`, so no consumer is stranded.
+
+## Optional operating records
+
+Evidence remains content-addressed files. Autonomy events remain in `EventStore`.
+`SqliteOperatingRecordStore` adds an independent `operating_records` table and
+connection; it may use the same database path or a separate database. It does
+not extend the `EventStore` protocol or participate in motion transactions.
+
+```python
+from pathlib import Path
+from paa_runtime import SqliteOperatingRecordStore, decode_operating_record
+
+record = decode_operating_record(Path("operating-record.json").read_bytes())
+accounting = SqliteOperatingRecordStore(Path("paa_runtime.db"))
+try:
+    accounting.append(record)
+    records = accounting.get_by_subject(record["subject"])
+finally:
+    accounting.close()
+```
+
+An append validates structure and commits one record atomically. Reusing a
+record ID is an error, including an identical retry of an already committed
+write; read by subject to reconcile an uncertain write before retrying. Reads
+return detached records in insertion order. Subject kind and ID both match
+exactly; each result retains task, declaration version, scope, and worker
+configuration. Multiple tasks, attempts, and summaries may share a subject.
+No update/delete API exists; SQLite triggers reject updates, deletes, and
+replacement inserts. As with the event store, this is not protection against
+an administrator dropping triggers or rewriting the database.
+
+`usage` keys are open, nonnegative quantities; recommended names include
+`input_tokens`, `output_tokens`, `cached_tokens`, and `llm_calls`. Null usage,
+individual quantities, or price explicitly means unavailable. Zero is a real
+measurement. A price requires `currency`, `amount`, and opaque `basis` together.
+Optional components carry additional costs **not already included** in the
+base price. Omitted components make no completeness claim. Component kinds and
+currencies are consumer-defined; the runtime neither sums nor converts them.
+
+Source references must identify the attributed work and attempts, including
+failures and superseded retries, and preserve constituent quantities,
+model/rate identities, pricing bases, and measured/estimated coverage. Pipeline
+summaries are allowed; a catalog reference and aggregate tokens alone cannot
+reprice mixed-model work. Do not sum pipeline totals and their constituent
+task records as independent charges. Multiple verdicts about one output do
+not create more charges. The runtime validates references structurally, not
+their external contents or accounting accuracy.
+
+Readers compute effective cost for one configuration, population, and window:
+attributed costs of **all** attempts divided by distinct accepted outcomes in
+that same population. Acceptance rules belong to the task/consumer. Zero
+accepted outcomes means undefined effective cost, not zero; missing prices
+cannot support an unqualified total-cost claim. Effective cost is not a stored
+field, and operating records cannot grant authority or offset a behavioral
+failure.

@@ -361,7 +361,7 @@ wheels = [
 
 [[package]]
 name = "paa-contracts"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/paa-contracts" }
 
 [package.dev-dependencies]
@@ -382,7 +382,7 @@ dev = [
 
 [[package]]
 name = "paa-runtime"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

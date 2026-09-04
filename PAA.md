@@ -18,6 +18,7 @@ where the implementation deliberately stops.
 | `AutonomyEvent`, `EventStore` | Autonomy event | Uses the contract's fourteen-field event representation and an implementation protocol with explicit ordering, transaction, uniqueness, and append-only semantics. |
 | `SqliteEventStore` | Evidence/event log substrate | Supplies the default append-only SQLite store, including storage-level update/delete rejection. |
 | `store_evidence`, `verify_evidence` | Evidence record binding | Content-addresses exact evidence bytes with SHA-256 and fails closed on missing or changed bytes. |
+| `OperatingRecord`, `SqliteOperatingRecordStore` | Operating accounting | Stores usage, prices and provenance separately from evidence files and autonomy events, retrievable by subject; no transition rule reads it. |
 | `import_events` | Archive replay | Imports already validated contract-shaped events without regenerating identifiers or timestamps. The legacy conformance capture proves field and projection continuity across extraction. |
 | `paa-contracts` conformance suite | Published contract | Checks schema vocabulary, declarations, event histories, evidence addressing, invalid semantic cases, and the pre-cutover capture against the same packaged corpus. |
 
@@ -80,9 +81,26 @@ implementation.
 ### Worker identity
 
 Events record an actor selected explicitly, from a configured environment
-variable, or from the OS login. The current contract has no durable worker
-identity or attestation field, so an evidence window cannot prove which worker
-produced every verdict. That requires a future contract revision.
+variable, or from the OS login. This actor is distinct from the optional
+evidence-record `worker {id, version, configuration_ref}` and the evaluator-side
+`producer`. Worker attribution is consumer-asserted identity, not attestation.
+The exact evidence bytes, including worker attribution, are retained. Current
+transition logic does not inspect worker identity or operating cost.
+
+### Future declaration rules — draft only, not implemented
+
+A later contract revision may declare a single-configuration evidence window:
+every qualifying verdict would need explicit matching worker identity and a
+configuration reference. Missing attribution would not establish compliance;
+evidence from another configuration would not silently count toward the window.
+
+A separate configuration-change rule may require restoring the declared safer
+position before operating a changed configuration. It would need to define
+which identity changes trigger it, the fallback when already at the safest
+position, window reset behavior, and atomicity with the consumer's configuration
+switch. Such a rule must be separately versioned and approved. This revision
+adds no declaration fields or automatic demotion, and does not claim to enforce
+"no inherited autonomy." Cost would remain outside transition eligibility.
 
 ### Governed-effect atomicity with the default store
 

@@ -22,6 +22,7 @@ from conformance._mutations import apply_mutations
 
 #: Which schema governs each case table's documents.
 SCHEMA_FOR_KIND: dict[str, str] = {
+    "operating": "paa-operating-record",
     "task": "paa-task",
     "evidence": "paa-evidence-record",
     "decision": "paa-decision-artifact",
