@@ -51,6 +51,7 @@ ALL_CASES = [
 ]
 
 PUBLISHED_FIXTURES = [
+    *(("operating", p) for p in contracts.operating_record_paths()),
     *(("task", p) for p in contracts.task_declaration_paths()),
     *(("event", p) for p in contracts.autonomy_event_paths()),
     *(("evidence", p) for p in contracts.evidence_record_paths()),
@@ -70,17 +71,17 @@ class TestTheCorpusIsWhatItClaims:
     guard against that.
     """
 
-    def test_the_case_tables_carry_ninety_five_cases(self) -> None:
-        assert len(ALL_CASES) == 95
+    def test_the_case_table_count_is_pinned(self) -> None:
+        assert len(ALL_CASES) == 147
 
-    def test_fifty_of_them_are_structural(self) -> None:
-        assert len(STRUCTURAL_CASES) == 50
+    def test_the_structural_case_count_is_pinned(self) -> None:
+        assert len(STRUCTURAL_CASES) == 102
 
     def test_fifteen_of_them_are_pinned(self) -> None:
         assert len(PINNED_CASES) == 15
 
     def test_every_published_fixture_is_discoverable(self) -> None:
-        assert len(PUBLISHED_FIXTURES) == 17
+        assert len(PUBLISHED_FIXTURES) == 22
 
 
 class TestFormatAssertionIsLive:

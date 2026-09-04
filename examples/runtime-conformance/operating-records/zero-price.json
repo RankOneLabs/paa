@@ -1,0 +1,35 @@
+{
+  "record_schema": "paa-operating-record/0.1.0-draft",
+  "record_id": "op-case-1002-zero",
+  "task": "inbound_reply_surfacing",
+  "declaration_version": 1,
+  "scope": null,
+  "subject": {
+    "kind": "case",
+    "id": "case-1002"
+  },
+  "worker": {
+    "id": "reply-drafter",
+    "version": "response-v7",
+    "configuration_ref": "cfg:reply-drafter-v7"
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "custom_measure": 0.5
+  },
+  "price": {
+    "currency": "USD",
+    "amount": 0,
+    "basis": "example-free-tier:v1"
+  },
+  "timestamps": {
+    "started_at": "2026-01-05T12:00:00.000Z",
+    "completed_at": "2026-01-05T12:00:02.000Z",
+    "recorded_at": "2026-01-05T12:00:02.500Z"
+  },
+  "source_references": [
+    "example://usage/case-1002/attempt-1"
+  ],
+  "components": []
+}

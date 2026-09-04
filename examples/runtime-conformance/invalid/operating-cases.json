@@ -1,0 +1,707 @@
+[
+  {
+    "id": "operating_missing_record_schema",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/record_schema"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_record_id",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/record_id"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_task",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/task"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_declaration_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/declaration_version"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_scope",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/scope"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_subject",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/subject"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_worker",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/worker"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_usage",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/usage"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_price",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/price"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_timestamps",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/timestamps"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_missing_source_references",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/source_references"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_worker_missing_id",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/worker/id"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/worker"
+    }
+  },
+  {
+    "id": "operating_worker_empty_id",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/worker/id",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/worker/id"
+    }
+  },
+  {
+    "id": "operating_worker_missing_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/worker/version"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/worker"
+    }
+  },
+  {
+    "id": "operating_worker_empty_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/worker/version",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/worker/version"
+    }
+  },
+  {
+    "id": "operating_worker_missing_configuration_ref",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/worker/configuration_ref"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/worker"
+    }
+  },
+  {
+    "id": "operating_worker_empty_configuration_ref",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/worker/configuration_ref",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/worker/configuration_ref"
+    }
+  },
+  {
+    "id": "operating_price_missing_basis",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "remove",
+        "path": "/price/basis"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/price"
+    }
+  },
+  {
+    "id": "operating_price_empty_basis",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/price/basis",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/price/basis"
+    }
+  },
+  {
+    "id": "operating_negative_price",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/price/amount",
+        "value": -1
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/price/amount"
+    }
+  },
+  {
+    "id": "operating_unavailable_amount",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/price/amount",
+        "value": null
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/price/amount"
+    }
+  },
+  {
+    "id": "operating_invalid_usage",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/usage/input_tokens",
+        "value": "many"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/usage/input_tokens"
+    }
+  },
+  {
+    "id": "operating_negative_usage",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/usage/input_tokens",
+        "value": -1
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/usage/input_tokens"
+    }
+  },
+  {
+    "id": "operating_empty_usage",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/usage",
+        "value": {}
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minProperties",
+      "path": "/usage"
+    }
+  },
+  {
+    "id": "operating_boolean_usage",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/usage/input_tokens",
+        "value": true
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/usage/input_tokens"
+    }
+  },
+  {
+    "id": "operating_empty_usage_key",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/usage",
+        "value": {
+          "": 1
+        }
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/usage"
+    }
+  },
+  {
+    "id": "operating_unknown_field",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/effective_cost",
+        "value": 0.1
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": ""
+    }
+  },
+  {
+    "id": "operating_invalid_subject",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/subject/kind",
+        "value": "pipeline"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "enum",
+      "path": "/subject/kind"
+    }
+  },
+  {
+    "id": "operating_invalid_task",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/task",
+        "value": "Bad Task"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "pattern",
+      "path": "/task"
+    }
+  },
+  {
+    "id": "operating_empty_scope",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/scope",
+        "value": ""
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/scope"
+    }
+  },
+  {
+    "id": "operating_invalid_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/declaration_version",
+        "value": 0
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/declaration_version"
+    }
+  },
+  {
+    "id": "operating_fractional_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/declaration_version",
+        "value": 1.5
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/declaration_version"
+    }
+  },
+  {
+    "id": "operating_boolean_version",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/declaration_version",
+        "value": true
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "type",
+      "path": "/declaration_version"
+    }
+  },
+  {
+    "id": "operating_unsupported_schema",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/record_schema",
+        "value": "paa-operating-record/99"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "const",
+      "path": "/record_schema"
+    }
+  },
+  {
+    "id": "operating_invalid_timestamp",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/timestamps/started_at",
+        "value": "not-a-date"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "format",
+      "path": "/timestamps/started_at"
+    }
+  },
+  {
+    "id": "operating_missing_timezone",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/timestamps/recorded_at",
+        "value": "2026-01-05T12:00:02"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "format",
+      "path": "/timestamps/recorded_at"
+    }
+  },
+  {
+    "id": "operating_invalid_calendar_date",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/timestamps/completed_at",
+        "value": "2026-02-30T12:00:02Z"
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "format",
+      "path": "/timestamps/completed_at"
+    }
+  },
+  {
+    "id": "operating_empty_references",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/source_references",
+        "value": []
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minItems",
+      "path": "/source_references"
+    }
+  },
+  {
+    "id": "operating_duplicate_references",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/source_references",
+        "value": [
+          "a",
+          "a"
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "uniqueItems",
+      "path": "/source_references"
+    }
+  },
+  {
+    "id": "operating_empty_reference",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/source_references",
+        "value": [
+          ""
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minLength",
+      "path": "/source_references/0"
+    }
+  },
+  {
+    "id": "operating_component_missing_basis",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/components",
+        "value": [
+          {
+            "kind": "review",
+            "quantity": 1,
+            "unit": "minute",
+            "price": {
+              "currency": "USD",
+              "amount": 1
+            }
+          }
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "required",
+      "path": "/components/0/price"
+    }
+  },
+  {
+    "id": "operating_component_negative_quantity",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/components",
+        "value": [
+          {
+            "kind": "review",
+            "quantity": -1,
+            "unit": "minute",
+            "price": null
+          }
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "minimum",
+      "path": "/components/0/quantity"
+    }
+  },
+  {
+    "id": "operating_component_unknown_field",
+    "base": "task-priced.json",
+    "mutations": [
+      {
+        "kind": "set",
+        "path": "/components",
+        "value": [
+          {
+            "kind": "review",
+            "quantity": 1,
+            "unit": "minute",
+            "price": null,
+            "extra": 1
+          }
+        ]
+      }
+    ],
+    "expected": {
+      "stage": "structural",
+      "code": "additionalProperties",
+      "path": "/components/0"
+    }
+  }
+]

@@ -1,7 +1,7 @@
 {
   "name": "@paadev/paa-contracts",
-  "version": "0.1.0",
-  "description": "Published contract artifacts of the Progressive Autonomy Architecture: four normative JSON Schemas, the positive fixture corpus every implementation is checked against, and the table-driven invalid-case matrices.",
+  "version": "0.2.0",
+  "description": "Published contract artifacts of the Progressive Autonomy Architecture: five normative JSON Schemas, the positive fixture corpus every implementation is checked against, and the table-driven invalid-case matrices.",
   "license": "MIT",
   "homepage": "https://www.paa.dev",
   "repository": {

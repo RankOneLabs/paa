@@ -1,0 +1,26 @@
+{
+  "record_schema": "paa-operating-record/0.1.0-draft",
+  "record_id": "op-case-1001-failed-attempt-2",
+  "task": "inbound_reply_surfacing",
+  "declaration_version": 1,
+  "scope": null,
+  "subject": {
+    "kind": "case",
+    "id": "case-1001"
+  },
+  "worker": {
+    "id": "reply-drafter",
+    "version": "response-v7",
+    "configuration_ref": "cfg:reply-drafter-v7"
+  },
+  "usage": null,
+  "price": null,
+  "timestamps": {
+    "started_at": "2026-01-05T12:00:00.000Z",
+    "completed_at": "2026-01-05T12:00:02.000Z",
+    "recorded_at": "2026-01-05T12:00:02.500Z"
+  },
+  "source_references": [
+    "example://usage/case-1001/failed-attempt-2"
+  ]
+}

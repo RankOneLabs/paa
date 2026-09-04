@@ -1,6 +1,6 @@
 [project]
 name = "paa-runtime"
-version = "0.3.0"
+version = "0.4.0"
 description = "Reference implementation of the Progressive Autonomy Architecture control plane: task declarations, motion lifecycle, position resolution, content-addressed evidence, and an append-only autonomy event store"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -34,7 +34,7 @@ Documentation = "https://www.paa.dev/reference/schema"
 Repository = "https://github.com/RankOneLabs/paa"
 
 [project.optional-dependencies]
-# Conformance runs against the published contract artifacts: the four schemas,
+# Conformance runs against the published contract artifacts: the five schemas,
 # the positive fixture corpus, and the invalid-case tables, all carried by
 # paa-contracts.
 #
@@ -60,7 +60,7 @@ Repository = "https://github.com/RankOneLabs/paa"
 # rfc3987, which is GPL, and this repo is MIT.
 conformance = [
     "jsonschema[format-nongpl]>=4.23",
-    "paa-contracts",
+    "paa-contracts>=0.2.0",
 ]
 
 # One repo, two published packages. The contract is data with no dependencies

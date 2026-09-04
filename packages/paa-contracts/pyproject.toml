@@ -1,7 +1,7 @@
 [project]
 name = "paa-contracts"
-version = "0.1.0"
-description = "Published Progressive Autonomy Architecture contract artifacts: the four normative JSON Schemas, the positive fixture corpus, and the invalid-case tables"
+version = "0.2.0"
+description = "Published Progressive Autonomy Architecture contract artifacts: the five normative JSON Schemas, the positive fixture corpus, and the invalid-case tables"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

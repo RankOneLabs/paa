@@ -1,0 +1,54 @@
+{
+  "record_schema": "paa-operating-record/0.1.0-draft",
+  "record_id": "op-run-2001-summary",
+  "task": "inbound_reply_surfacing",
+  "declaration_version": 1,
+  "scope": null,
+  "subject": {
+    "kind": "run",
+    "id": "run-2001"
+  },
+  "worker": {
+    "id": "reply-pipeline",
+    "version": "v3",
+    "configuration_ref": "cfg:all-models-prompts-routing-evaluators-v3"
+  },
+  "usage": {
+    "input_tokens": 2000,
+    "output_tokens": 500,
+    "tool_seconds": null
+  },
+  "price": {
+    "currency": "USD",
+    "amount": 0.032,
+    "basis": "example-catalog:v1"
+  },
+  "timestamps": {
+    "started_at": "2026-01-05T12:00:00.000Z",
+    "completed_at": "2026-01-05T12:00:02.000Z",
+    "recorded_at": "2026-01-05T12:00:02.500Z"
+  },
+  "source_references": [
+    "example://usage/run-2001/draft/attempt-1",
+    "example://usage/run-2001/critic/attempt-1",
+    "example://review/run-2001"
+  ],
+  "components": [
+    {
+      "kind": "human_review",
+      "quantity": 3.5,
+      "unit": "minutes",
+      "price": {
+        "currency": "USD",
+        "amount": 4.08,
+        "basis": "example-review-rate:2026q3"
+      }
+    },
+    {
+      "kind": "tool_execution",
+      "quantity": null,
+      "unit": "seconds",
+      "price": null
+    }
+  ]
+}

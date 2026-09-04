@@ -41,7 +41,7 @@ def _sha_from_path(path: Path) -> str:
 
 class TestCorpusIsPresent:
     def test_evidence_records_are_discoverable(self) -> None:
-        assert len(contracts.evidence_record_paths()) == 3
+        assert len(contracts.evidence_record_paths()) == 4
 
     def test_decision_artifacts_are_discoverable(self) -> None:
         assert len(contracts.decision_artifact_paths()) == 5
