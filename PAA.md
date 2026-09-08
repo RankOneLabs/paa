@@ -45,7 +45,7 @@ field loss, that the lifecycle can produce them, that content addresses are
 re-derived from bytes, and that runtime-owned negative cases fail for the
 published reason.
 
-## Honest non-matches
+## Non-matches
 
 ### Evaluator verdict production
 
@@ -113,10 +113,6 @@ cross-document corpus validation remains in the published conformance tooling.
 
 ## Scope of the claim
 
-The accurate claim is:
-
-> `paa-runtime` implements PAA's declared autonomy-transition lifecycle and
-> passes the published conformance corpus.
-
-It is not a claim that the runtime implements evaluation, worker attestation,
-or every consumer's governed effect.
+`paa-runtime` implements PAA's declared autonomy-transition lifecycle and
+passes the published conformance corpus. It does not implement evaluation,
+worker attestation, or any consumer's governed effect.

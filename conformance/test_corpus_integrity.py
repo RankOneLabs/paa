@@ -175,8 +175,8 @@ class TestUnclaimedStages:
     identity drift, illegal motion ordering — which is real logic, not a
     schema pass, and it does not exist in Python yet.
 
-    The ratchet that keeps this honest: the JS validator covering these
-    is not deleted until they are claimed here. Counts pinned so the gap
+    The ratchet: the JS validator covering these is not deleted until
+    they are claimed here. Counts pinned so the gap
     stays measured.
     """
 
