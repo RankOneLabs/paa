@@ -2,7 +2,7 @@
 
 The published contract artifacts of the [Progressive Autonomy Architecture](https://www.paa.dev): five normative JSON Schemas, the positive fixture corpus every implementation is checked against, and the table-driven invalid-case matrices.
 
-No runtime logic, no dependencies. This package is data and honest paths to it.
+No runtime logic, no dependencies. This package is data, plus paths to it.
 
 ## Why it exists
 
@@ -63,7 +63,7 @@ for case in contracts.invalid_cases("event", stage="event_semantic"):
 
 ## The stage split
 
-Every invalid case declares `expected.stage`, and that field is an ownership boundary rather than a label:
+Every invalid case declares `expected.stage`, an ownership boundary:
 
 | Stage | Owner | Why |
 |---|---|---|
@@ -77,9 +77,9 @@ Filter with `invalid_cases(kind, stage=...)` and take only what you own. `case_s
 
 The artifacts are not checked into this directory. `hatch_build.py` pulls them from the repo root at build time — that hook is where the inclusion logic lives, not `pyproject.toml`, which only registers it. So the files paa.dev serves at their published URLs, the files the validator reads, and the files a conformance suite loads are the same bytes from the same commit.
 
-Vendoring copies here would put two sources of truth one careless commit apart and make every conformance claim a claim about the copy. Build-time inclusion makes "one source of truth" a property of the build instead of a rule someone has to remember.
+Vendoring copies here would put two sources of truth one careless commit apart and make every conformance claim a claim about the copy. Build-time inclusion makes one source of truth a property of the build.
 
-The consequence: a wheel can only be built from a full checkout of this repo. That is correct — a release cut from anything less than the whole tree would be a partial contract.
+The consequence: a wheel can only be built from a full checkout of this repo — a release cut from anything less than the whole tree would be a partial contract.
 
 ## Contents
 

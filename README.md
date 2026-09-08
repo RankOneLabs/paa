@@ -101,7 +101,7 @@ For a complete disposable propose → approve → demote walk, run the
 
 `SqliteEventStore` is the default and most consumers should use it. `EventStore` is a protocol so that a consumer whose governed effect and the position read authorizing it must commit in a *single lock domain* can implement it over its own connection — a runtime-owned database cannot offer that guarantee across process boundaries. It is one insert, four reads, and two transaction context managers.
 
-The trade-off is named rather than hidden. With the default store, a consumer that resolves a position and then performs the effect it authorizes does so across two lock domains: a demotion committed in between is not seen by the effect already in flight. That window is small and the failure is a stale *permit*, not a corrupt history — but it is real, and a consumer for which it is unacceptable implements `EventStore` over the same connection its effect commits on.
+With the default store, a consumer that resolves a position and then performs the effect it authorizes does so across two lock domains: a demotion committed in between is not seen by the effect already in flight. That window is small and the failure is a stale *permit*, not a corrupt history — but it is real, and a consumer for which it is unacceptable implements `EventStore` over the same connection its effect commits on.
 
 ## Development
 
@@ -113,10 +113,7 @@ uv run mypy src/paa_runtime
 ```
 
 The implementation-to-spec mapping, including explicit non-matches, is in
-[`PAA.md`](PAA.md). The conformance corpus also includes a contract-shaped
-history captured from the source consumer's pre-cutover implementation. Its production database had
-zero autonomy events at cutover, so that artifact is deliberately labeled an
-implementation capture rather than production transition history.
+[`PAA.md`](PAA.md).
 
 ### Conformance
 
@@ -133,13 +130,12 @@ uv sync --extra conformance
 uv run pytest conformance
 ```
 
-The `conformance` path is required, not decoration. `testpaths` is `tests`, so
+The `conformance` path is required. `testpaths` is `tests`, so
 a bare `uv run pytest` runs the unit suite and nothing else — which is what
 lets the unit suite stay green for someone who cloned only this repo. The
 conformance suite is opt-in by *invocation* rather than by skip marker: when it
 is asked to run and the artifacts are absent, `paa_contracts` raises at import
-and the run fails loudly, because a conformance suite reporting green over an
-empty corpus is the one failure mode it must not have.
+and the run fails loudly rather than reporting green over an empty corpus.
 
 What it asserts, per fixture class:
 
@@ -168,7 +164,7 @@ package has no import path to point them at — it governs motions it writes
 itself, enforcing those rules at write time rather than by inspecting a
 finished document.
 
-One honest non-match: the published demotion history binds to a
+One non-match: the published demotion history binds to a
 `paa-decision-artifact`, while `demote` generates and content-addresses its own
 evidence so an emergency demotion never blocks on an operator producing an
 artifact first. Its event stream reproduces the published one in every field

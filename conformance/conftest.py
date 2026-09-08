@@ -18,10 +18,9 @@ def pytest_report_header() -> list[str]:
 
     Packaged data and a site checkout are the same bytes from the same
     commit, so which one is active never changes an answer — but it
-    changes what a failure *means*, which is why it belongs in the run
-    output. A header prints unconditionally; a fixture only reports when
-    something requests it, which is how this started life and why nothing
-    ever saw it.
+    changes what a failure *means*, so it belongs in the run output. A
+    header prints unconditionally, unlike a fixture, which reports only
+    when something requests it.
     """
     return [
         f"paa-contracts: {contracts.__version__} ({contracts.DATA_SOURCE})",
@@ -54,10 +53,10 @@ def build_registry(documents: Sequence[dict[str, Any]]) -> tuple[ProducerRegistr
 
     The registry is consumer domain data the runtime deliberately does not
     own, so a conformance run has to supply one. Deriving it from the
-    corpus is the honest choice: it makes the claim "given a registry that
-    registers what these declarations reference, the loader accepts them",
-    which is the claim an implementation can actually make about fixtures
-    whose producers live in somebody else's codebase.
+    corpus makes the claim "given a registry that registers what these
+    declarations reference, the loader accepts them", which is the claim
+    an implementation can actually make about fixtures whose producers
+    live in somebody else's codebase.
 
     Every entry is registered ``implemented``. The implemented/future
     split governs whether a consumer has built the producer yet — a fact

@@ -3,14 +3,12 @@
 This package is the contract side of the PAA split: the five normative JSON
 Schemas, the positive fixture corpus every implementation is checked against,
 and the table-driven invalid-case matrices. It contains no runtime logic and
-has no dependencies — it is data, plus honest paths to that data.
+has no dependencies — it is data, plus paths to that data.
 
-The dependency direction is the point. An implementation depends on the
-contract; the contract never depends on an implementation. ``paa-runtime`` is
-the first consumer, a task-schema conformance test is the second, and a
-second implementation in any language gets its fixtures the same way the first
-one does. That is implementation-neutrality made mechanical instead of
-asserted.
+An implementation depends on the contract; the contract never depends on an
+implementation. ``paa-runtime`` is the first consumer, a task-schema
+conformance test is the second, and a second implementation in any language
+gets its fixtures the same way the first one does.
 
 Nothing here is a copy. The artifacts are pulled from the repo root at build
 time by hatch_build.py, so the files the site serves at https://www.paa.dev
@@ -102,7 +100,7 @@ type Mutation = CopyMutation | RemoveMutation | SetMutation
 class ExpectedFailure(TypedDict):
     """What the mutated document must be rejected for.
 
-    ``stage`` is the ownership boundary, not decoration. ``structural`` cases
+    ``stage`` is the ownership boundary. ``structural`` cases
     are Ajv's vocabulary — its error keywords and JSON pointers — and belong
     to the site's validator. Every other stage is expressed in the runtime's
     own vocabulary and belongs to an implementation's conformance suite. A
@@ -132,12 +130,11 @@ class InvalidCase(TypedDict):
 #: Every directory that has to be present for a corpus to count as complete.
 #: Checked in full rather than by sampling one of them: a partial artifact set
 #: satisfies imports and then returns empty tuples from the accessors, which
-#: is the silent-pass failure this module exists to refuse.
+#: would let a suite iterate nothing and report success.
 _REQUIRED_ROOTS: tuple[str, ...] = (
     "schemas",
     "examples/paa-tasks",
     "examples/runtime-conformance",
-    "examples/legacy-archive",
 )
 
 
@@ -158,14 +155,14 @@ def _resolve_data_root() -> tuple[Path, Literal["packaged", "worktree"]]:
     suite can see it.
 
     Both modes resolve to the same bytes from the same commit, so which one is
-    active never changes an answer — but it changes what a failure means,
-    which is why it is reported rather than hidden.
+    active never changes an answer — but it changes what a failure means, so
+    it is reported.
 
-    Completeness is required of both, and that is the part worth stating.
-    Accepting a root because one expected directory is present would let a
-    wheel missing a fixture tree import cleanly as ``packaged``, after which
-    every accessor for the missing tree returns ``()`` and a conformance suite
-    iterates nothing and reports success. The build-time check in
+    Completeness is required of both. Accepting a root because one expected
+    directory is present would let a wheel missing a fixture tree import
+    cleanly as ``packaged``, after which every accessor for the missing tree
+    returns ``()`` and a conformance suite iterates nothing and reports
+    success. The build-time check in
     scripts/verify_built_wheel.py cannot help a consumer who installs such a
     wheel; this can.
     """
@@ -242,8 +239,8 @@ def schema_version(schema_id: SchemaId) -> str:
 
     Read from the schema rather than mirrored into a constant here. Package
     version and schema-family versions drift independently on purpose — a
-    packaging fix should not imply a contract revision — so the only honest
-    source for a family version is the schema file that declares it.
+    packaging fix should not imply a contract revision — so the source for a
+    family version is the schema file that declares it.
     """
     version = load_schema(schema_id).get("x-paa-schema-version")
     if not isinstance(version, str):

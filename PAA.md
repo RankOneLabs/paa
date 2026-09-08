@@ -19,8 +19,8 @@ where the implementation deliberately stops.
 | `SqliteEventStore` | Evidence/event log substrate | Supplies the default append-only SQLite store, including storage-level update/delete rejection. |
 | `store_evidence`, `verify_evidence` | Evidence record binding | Content-addresses exact evidence bytes with SHA-256 and fails closed on missing or changed bytes. |
 | `OperatingRecord`, `SqliteOperatingRecordStore` | Operating accounting | Stores usage, prices and provenance separately from evidence files and autonomy events, retrievable by subject; no transition rule reads it. |
-| `import_events` | Archive replay | Imports already validated contract-shaped events without regenerating identifiers or timestamps. The legacy conformance capture proves field and projection continuity across extraction. |
-| `paa-contracts` conformance suite | Published contract | Checks schema vocabulary, declarations, event histories, evidence addressing, invalid semantic cases, and the pre-cutover capture against the same packaged corpus. |
+| `import_events` | Archive replay | Imports already validated contract-shaped events without regenerating identifiers or timestamps. |
+| `paa-contracts` conformance suite | Published contract | Checks schema vocabulary, declarations, event histories, evidence addressing, and invalid semantic cases against the same packaged corpus. |
 
 ## Lifecycle coverage
 
@@ -45,18 +45,7 @@ field loss, that the lifecycle can produce them, that content addresses are
 re-derived from bytes, and that runtime-owned negative cases fail for the
 published reason.
 
-`examples/legacy-archive/pre-cutover-capture.json` adds the consumer-boundary
-proof. It was generated with the source consumer's pre-cutover lifecycle implementation at
-commit `721c37facac64f12a164e510c9a0aa647a960cba`, then imported into the
-extracted runtime. The test reproduces its event rows, motion projection, and
-resolved position exactly.
-
-The source consumer's production `autonomy_events` table contained zero rows at cutover. The
-capture is therefore evidence from the real pre-cutover implementation, not a
-claim that a production autonomy transition occurred. Keeping that distinction
-in the artifact is part of the citation bar.
-
-## Honest non-matches
+## Non-matches
 
 ### Evaluator verdict production
 
@@ -124,11 +113,6 @@ cross-document corpus validation remains in the published conformance tooling.
 
 ## Scope of the claim
 
-The accurate claim is:
-
-> `paa-runtime` implements PAA's declared autonomy-transition lifecycle and
-> passes the published conformance corpus, including replay of a history
-> captured from the source consumer's pre-cutover implementation.
-
-It is not a claim that the runtime implements evaluation, worker attestation,
-or every consumer's governed effect.
+`paa-runtime` implements PAA's declared autonomy-transition lifecycle and
+passes the published conformance corpus. It does not implement evaluation,
+worker attestation, or any consumer's governed effect.
