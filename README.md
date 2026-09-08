@@ -113,10 +113,7 @@ uv run mypy src/paa_runtime
 ```
 
 The implementation-to-spec mapping, including explicit non-matches, is in
-[`PAA.md`](PAA.md). The conformance corpus also includes a contract-shaped
-history captured from the source consumer's pre-cutover implementation. Its production database had
-zero autonomy events at cutover, so that artifact is deliberately labeled an
-implementation capture rather than production transition history.
+[`PAA.md`](PAA.md).
 
 ### Conformance
 

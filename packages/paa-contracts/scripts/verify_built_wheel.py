@@ -29,7 +29,6 @@ ARTIFACT_DIRS = (
     "schemas",
     "examples/paa-tasks",
     "examples/runtime-conformance",
-    "examples/legacy-archive",
 )
 
 _DATA_MARKER = "/_data/"

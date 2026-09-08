@@ -2,7 +2,12 @@ name: CI
 
 on:
   pull_request:
+  # Restricted to main so a branch with an open PR is not built twice for the
+  # same commit: an unfiltered `push` fires alongside `pull_request` on every
+  # branch push. Keeping main here still covers the post-merge commit and any
+  # push that lands without a PR.
   push:
+    branches: [main]
 
 permissions:
   contents: read

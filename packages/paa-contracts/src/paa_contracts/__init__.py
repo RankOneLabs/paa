@@ -137,7 +137,6 @@ _REQUIRED_ROOTS: tuple[str, ...] = (
     "schemas",
     "examples/paa-tasks",
     "examples/runtime-conformance",
-    "examples/legacy-archive",
 )
 
 

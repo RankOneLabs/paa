@@ -16,5 +16,4 @@ The script creates an isolated temporary database and evidence tree, proposes
 repository. `refund_approval.v1.yaml` remains in the shared contract corpus so
 the quickstart, conformance suite, and paa.dev schema reference use one fixture.
 
-This is adoption-oriented synthetic pedagogy. The separately labeled
-pre-cutover capture is the cross-implementation evidence artifact.
+The fixtures here are synthetic teaching examples, not captured history.
