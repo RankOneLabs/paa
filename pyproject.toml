@@ -60,7 +60,7 @@ Repository = "https://github.com/RankOneLabs/paa"
 # rfc3987, which is GPL, and this repo is MIT.
 conformance = [
     "jsonschema[format-nongpl]>=4.23",
-    "paa-contracts>=0.2.0",
+    "paa-contracts>=0.3.0",
 ]
 
 # One repo, two published packages. The contract is data with no dependencies

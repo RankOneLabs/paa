@@ -23,7 +23,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, NotRequired, TypedDict
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 class ContractsUnavailableError(RuntimeError):

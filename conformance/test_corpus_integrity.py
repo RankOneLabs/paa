@@ -72,16 +72,16 @@ class TestTheCorpusIsWhatItClaims:
     """
 
     def test_the_case_table_count_is_pinned(self) -> None:
-        assert len(ALL_CASES) == 147
+        assert len(ALL_CASES) == 153
 
     def test_the_structural_case_count_is_pinned(self) -> None:
-        assert len(STRUCTURAL_CASES) == 102
+        assert len(STRUCTURAL_CASES) == 108
 
     def test_fifteen_of_them_are_pinned(self) -> None:
         assert len(PINNED_CASES) == 15
 
     def test_every_published_fixture_is_discoverable(self) -> None:
-        assert len(PUBLISHED_FIXTURES) == 22
+        assert len(PUBLISHED_FIXTURES) == 23
 
 
 class TestFormatAssertionIsLive:

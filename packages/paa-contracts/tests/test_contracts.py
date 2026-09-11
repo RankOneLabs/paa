@@ -80,10 +80,10 @@ class TestPositiveFixtures:
         [
             (contracts.task_declaration_paths, 4),
             (contracts.autonomy_event_paths, 5),
-            (contracts.evidence_record_paths, 4),
+            (contracts.evidence_record_paths, 5),
             (contracts.operating_record_paths, 4),
             (contracts.decision_artifact_paths, 5),
-            (contracts.payload_schema_paths, 2),
+            (contracts.payload_schema_paths, 3),
         ],
     )
     def test_corpus_size_is_pinned(self, accessor: object, expected_count: int) -> None:
@@ -121,7 +121,7 @@ class TestPositiveFixtures:
 class TestInvalidCases:
     @pytest.mark.parametrize(
         ("kind", "expected_count"),
-        [("task", 63), ("evidence", 15), ("decision", 11), ("event", 15), ("operating", 43)],
+        [("task", 63), ("evidence", 21), ("decision", 11), ("event", 15), ("operating", 43)],
     )
     def test_case_table_size_is_pinned(self, kind: str, expected_count: int) -> None:
         assert len(contracts.invalid_cases(kind)) == expected_count  # type: ignore[arg-type]

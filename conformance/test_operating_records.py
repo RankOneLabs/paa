@@ -60,6 +60,32 @@ def test_current_evidence_without_worker_remains_valid() -> None:
     assert violations("evidence", record) == ()
 
 
+def test_every_retained_evidence_version_has_a_valid_fixture() -> None:
+    versions = {
+        json.loads(path.read_bytes())["record_schema"]
+        for path in contracts.evidence_record_paths()
+    }
+    assert versions == {
+        "paa-evidence-record/0.1.0-draft",
+        "paa-evidence-record/0.2.0-draft",
+        "paa-evidence-record/0.3.0-draft",
+    }
+
+
+def test_numeric_verdict_is_native_in_v03() -> None:
+    records = [json.loads(path.read_bytes()) for path in contracts.evidence_record_paths()]
+    numeric = next(record for record in records if isinstance(record["verdict"]["value"], float))
+    assert numeric["record_schema"] == "paa-evidence-record/0.3.0-draft"
+    assert violations("evidence", numeric) == ()
+
+
+def test_string_verdict_remains_valid_in_v03() -> None:
+    record = json.loads(contracts.evidence_record_paths()[0].read_bytes())
+    record["record_schema"] = "paa-evidence-record/0.3.0-draft"
+    record["verdict"]["value"] = "pass"
+    assert violations("evidence", record) == ()
+
+
 def test_operating_records_do_not_change_motion_outcomes(
     runtime_config: RuntimeConfig, tmp_path: Path,
 ) -> None:

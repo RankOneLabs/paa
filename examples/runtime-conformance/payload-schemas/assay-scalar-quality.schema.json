@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paa.dev/payload-schemas/assay-scalar-quality.schema.json",
+  "title": "Assay scalar quality evidence payload",
+  "description": "Narrows paa-evidence-record/0.3.0-draft for an Assay scalar quality evaluator while keeping experiment lineage in the producer-owned payload.",
+  "allOf": [
+    { "$ref": "https://paa.dev/paa-evidence-record.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "record_schema": { "const": "paa-evidence-record/0.3.0-draft" },
+        "verdict": {
+          "type": "object",
+          "properties": {
+            "value": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "run_id",
+            "cell_id",
+            "evaluator_id",
+            "plan_ref",
+            "arm_id",
+            "base_subject_ref",
+            "worker_repeat",
+            "evaluator_repeat",
+            "detail_refs"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "run_id": { "type": "string", "minLength": 1 },
+            "cell_id": { "type": "string", "minLength": 1 },
+            "evaluator_id": { "type": "string", "minLength": 1 },
+            "plan_ref": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "arm_id": { "type": "string", "minLength": 1 },
+            "base_subject_ref": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "worker_repeat": { "type": "integer", "minimum": 0 },
+            "evaluator_repeat": { "type": "integer", "minimum": 0 },
+            "detail_refs": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

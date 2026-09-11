@@ -87,7 +87,7 @@ The consequence: a wheel can only be built from a full checkout of this repo —
 |---|---|
 | `schemas/` | `paa-task`, `paa-evidence-record`, `paa-decision-artifact`, `paa-autonomy-event`, `paa-operating-record` |
 | `examples/paa-tasks/` | four valid declarations + 63 invalid cases |
-| `examples/runtime-conformance/` | evidence and operating records, decision artifacts, autonomy-event sequences, payload companion schemas, 84 invalid cases |
+| `examples/runtime-conformance/` | evidence and operating records, decision artifacts, autonomy-event sequences, payload companion schemas, 90 invalid cases |
 | `examples/runtime-conformance/invalid/fixtures/tampered-evidence/` | a deliberately byte-mismatched artifact, so tamper detection has something real to fail on |
 
 ## Versioning
@@ -99,6 +99,15 @@ contracts.schema_version("paa-autonomy-event")   # 'paa-autonomy-event/0.1.0-dra
 ```
 
 ## Development
+
+### Contract changes in 0.3.0
+
+`paa-evidence-record/0.3.0-draft` admits native JSON-number verdicts while
+retaining string verdicts. The `0.1.0-draft` and `0.2.0-draft` stamps remain
+string-only, and worker attribution follows the existing 0.2 rules. The
+positive corpus includes an Assay scalar-quality record and companion schema;
+negative cases pin the version boundary and reject null, boolean, array, and
+object verdicts.
 
 ### Contract changes in 0.2.0
 
