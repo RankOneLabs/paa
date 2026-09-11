@@ -15,7 +15,9 @@ from pathlib import Path
 
 import paa_contracts as contracts
 import pytest
-from jsonschema import Draft202012Validator
+import yaml
+from jsonschema import Draft7Validator, Draft202012Validator, FormatChecker
+from referencing import Registry, Resource
 
 from paa_runtime import (
     EvidenceError,
@@ -41,13 +43,13 @@ def _sha_from_path(path: Path) -> str:
 
 class TestCorpusIsPresent:
     def test_evidence_records_are_discoverable(self) -> None:
-        assert len(contracts.evidence_record_paths()) == 4
+        assert len(contracts.evidence_record_paths()) == 5
 
     def test_decision_artifacts_are_discoverable(self) -> None:
         assert len(contracts.decision_artifact_paths()) == 5
 
     def test_payload_schemas_are_discoverable(self) -> None:
-        assert len(contracts.payload_schema_paths()) == 2
+        assert len(contracts.payload_schema_paths()) == 3
 
 
 class TestContentAddressing:
@@ -131,6 +133,78 @@ class TestPayloadSchemas:
     )
     def test_payload_schema_is_a_valid_schema(self, path: Path) -> None:
         Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
+
+    @pytest.mark.parametrize(
+        "path", contracts.evidence_record_paths(), ids=lambda p: p.parent.name[:12],
+    )
+    def test_evidence_validates_against_its_companion_schema(self, path: Path) -> None:
+        document = json.loads(path.read_bytes())
+        _companion_validator(document["payload_schema"]).validate(document)
+
+    @pytest.mark.parametrize("value", [0, 0.875, 1])
+    def test_scalar_companion_accepts_inclusive_numeric_range(self, value: float) -> None:
+        document = _numeric_evidence()
+        document["verdict"]["value"] = value
+        _companion_validator(document["payload_schema"]).validate(document)
+
+    @pytest.mark.parametrize("value", [-0.01, 1.01, "0.875", True, None])
+    def test_scalar_companion_rejects_invalid_verdicts(self, value: object) -> None:
+        document = _numeric_evidence()
+        document["verdict"]["value"] = value
+        assert not _companion_validator(document["payload_schema"]).is_valid(document)
+
+    @pytest.mark.parametrize("field", ["run_id", "cell_id", "evaluator_id", "plan_ref"])
+    def test_scalar_companion_requires_lineage(self, field: str) -> None:
+        document = _numeric_evidence()
+        del document["payload"][field]
+        assert not _companion_validator(document["payload_schema"]).is_valid(document)
+
+
+def _companion_validator(schema_id: str) -> Draft7Validator:
+    """Resolve the base envelope entirely from the published local corpus."""
+    base = contracts.load_schema("paa-evidence-record")
+    registry = Registry().with_resource(base["$id"], Resource.from_contents(base))
+    companions = {
+        document["$id"]: document
+        for path in contracts.payload_schema_paths()
+        for document in [json.loads(path.read_bytes())]
+    }
+    return Draft7Validator(
+        companions[schema_id], registry=registry, format_checker=FormatChecker(),
+    )
+
+
+def _numeric_evidence() -> dict:
+    return next(
+        document
+        for path in contracts.evidence_record_paths()
+        for document in [json.loads(path.read_bytes())]
+        if document["record_schema"] == "paa-evidence-record/0.3.0-draft"
+    )
+
+
+class TestEvidenceDeclarations:
+    """Positive fixtures must reference real declared task/evaluator identities.
+
+    These are corpus-integrity assertions, not a new foreign-record import API.
+    Schema-valid evidence alone cannot establish that its task exists.
+    """
+
+    @pytest.mark.parametrize(
+        "path", contracts.evidence_record_paths(), ids=lambda p: p.parent.name[:12],
+    )
+    def test_evidence_matches_a_published_declaration(self, path: Path) -> None:
+        declarations = {
+            document["task"]: document
+            for task_path in contracts.task_declaration_paths()
+            for document in [yaml.safe_load(task_path.read_text(encoding="utf-8"))]
+        }
+        record = json.loads(path.read_bytes())
+        assert record["task"] in declarations, "evidence.unknown_task"
+        declaration = declarations[record["task"]]
+        assert record["declaration_version"] == declaration["version"]
+        assert record["scope"] in declaration.get("scopes", [None])
+        assert record["evaluator"] in declaration["evaluators"]
 
 
 class TestUnownedStages:

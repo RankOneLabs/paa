@@ -237,5 +237,46 @@
       "code": "not",
       "path": ""
     }
+  },
+  {
+    "id": "evidence_numeric_verdict_v01",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [
+      { "kind": "set", "path": "/record_schema", "value": "paa-evidence-record/0.1.0-draft" },
+      { "kind": "remove", "path": "/worker" }
+    ],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
+  },
+  {
+    "id": "evidence_numeric_verdict_v02",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [
+      { "kind": "set", "path": "/record_schema", "value": "paa-evidence-record/0.2.0-draft" }
+    ],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
+  },
+  {
+    "id": "evidence_null_verdict_v03",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/verdict/value", "value": null }],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
+  },
+  {
+    "id": "evidence_boolean_verdict_v03",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/verdict/value", "value": true }],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
+  },
+  {
+    "id": "evidence_array_verdict_v03",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/verdict/value", "value": [0.875] }],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
+  },
+  {
+    "id": "evidence_object_verdict_v03",
+    "base": "evidence/paa/772600716f1b221836cd5f0732e7633e38edb6903e48f463dbfb4c97f848672a/evidence.json",
+    "mutations": [{ "kind": "set", "path": "/verdict/value", "value": { "score": 0.875 } }],
+    "expected": { "stage": "structural", "code": "type", "path": "/verdict/value" }
   }
 ]

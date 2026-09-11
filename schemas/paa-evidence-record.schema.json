@@ -3,7 +3,7 @@
   "$id": "https://paa.dev/paa-evidence-record.schema.json",
   "title": "PAA Evidence Record",
   "description": "Universal runtime envelope for one evaluator's verdict on one subject, produced against a PAA task declaration.",
-  "x-paa-schema-version": "paa-evidence-record/0.2.0-draft",
+  "x-paa-schema-version": "paa-evidence-record/0.3.0-draft",
   "type": "object",
   "required": [
     "record_schema",
@@ -67,7 +67,11 @@
   "properties": {
     "record_schema": {
       "type": "string",
-      "enum": ["paa-evidence-record/0.1.0-draft", "paa-evidence-record/0.2.0-draft"]
+      "enum": [
+        "paa-evidence-record/0.1.0-draft",
+        "paa-evidence-record/0.2.0-draft",
+        "paa-evidence-record/0.3.0-draft"
+      ]
     },
     "record_id": {
       "type": "string",
@@ -138,7 +142,11 @@
       "required": ["value", "reason_codes"],
       "additionalProperties": false,
       "properties": {
-        "value": { "type": "string", "minLength": 1 },
+        "value": {
+          "description": "The evaluator's native string or numeric verdict. Records before 0.3.0 remain string-only.",
+          "type": ["string", "number"],
+          "minLength": 1
+        },
         "reason_codes": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
@@ -186,6 +194,27 @@
     {
       "if": { "properties": { "record_schema": { "const": "paa-evidence-record/0.1.0-draft" } } },
       "then": { "not": { "required": ["worker"] } }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_schema": {
+            "enum": [
+              "paa-evidence-record/0.1.0-draft",
+              "paa-evidence-record/0.2.0-draft"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "verdict": {
+            "properties": {
+              "value": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
     }
   ]
 }
