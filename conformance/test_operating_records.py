@@ -79,6 +79,13 @@ def test_numeric_verdict_is_native_in_v03() -> None:
     assert violations("evidence", numeric) == ()
 
 
+def test_string_verdict_remains_valid_in_v03() -> None:
+    record = json.loads(contracts.evidence_record_paths()[0].read_bytes())
+    record["record_schema"] = "paa-evidence-record/0.3.0-draft"
+    record["verdict"]["value"] = "pass"
+    assert violations("evidence", record) == ()
+
+
 def test_operating_records_do_not_change_motion_outcomes(
     runtime_config: RuntimeConfig, tmp_path: Path,
 ) -> None:
